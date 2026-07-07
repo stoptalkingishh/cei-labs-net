@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<!--
+  cei-labs-net :: DNS interception (NAT port-forward) fragment
+
+  This is a MERGE FRAGMENT, not a full pfSense config.xml export. Import the
+  <rule> elements into the corresponding <nat> and <filter> sections of your
+  running config via Diagnostics > Edit File / config history, or recreate
+  them by hand via Firewall > NAT > Port Forward using the field values in
+  docs/security-qos-policy.md #1.
+
+  Replace <interface> values with your actual pfSense interface identifiers
+  for VLAN 30 (Player Wi-Fi) and VLAN 40 (Player Wired) — e.g. igb1_vlan30,
+  igb1_vlan40 — as assigned under Interfaces > Assignments.
+-->
+<pfsense>
+  <nat>
+    <rule>
+      <interface>vlan30_player</interface>
+      <protocol>tcp/udp</protocol>
+      <source><any/></source>
+      <destination><any/></destination>
+      <destination-port>
+        <from>53</from>
+        <to>53</to>
+      </destination-port>
+      <target>127.0.0.1</target>
+      <local-port>53</local-port>
+      <descr>Force VLAN30 DNS to local Unbound resolver</descr>
+      <associated-rule-id>vlan30_dns_redirect</associated-rule-id>
+    </rule>
+    <rule>
+      <interface>vlan40_player</interface>
+      <protocol>tcp/udp</protocol>
+      <source><any/></source>
+      <destination><any/></destination>
+      <destination-port>
+        <from>53</from>
+        <to>53</to>
+      </destination-port>
+      <target>127.0.0.1</target>
+      <local-port>53</local-port>
+      <descr>Force VLAN40 DNS to local Unbound resolver</descr>
+      <associated-rule-id>vlan40_dns_redirect</associated-rule-id>
+    </rule>
+  </nat>
+
+  <filter>
+    <rule>
+      <id>vlan30_dns_redirect</id>
+      <interface>vlan30_player</interface>
+      <protocol>tcp/udp</protocol>
+      <source><any/></source>
+      <destination>
+        <address>127.0.0.1</address>
+        <port>53</port>
+      </destination>
+      <type>pass</type>
+      <descr>Allow redirected DNS to local resolver (auto-assoc with NAT rule)</descr>
+    </rule>
+    <rule>
+      <id>vlan40_dns_redirect</id>
+      <interface>vlan40_player</interface>
+      <protocol>tcp/udp</protocol>
+      <source><any/></source>
+      <destination>
+        <address>127.0.0.1</address>
+        <port>53</port>
+      </destination>
+      <type>pass</type>
+      <descr>Allow redirected DNS to local resolver (auto-assoc with NAT rule)</descr>
+    </rule>
+  </filter>
+</pfsense>

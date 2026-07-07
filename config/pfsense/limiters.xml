@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<!--
+  cei-labs-net :: Per-IP traffic shaper limiters
+
+  MERGE FRAGMENT — see dns-redirect-nat.xml header for import notes.
+  Corresponds to Firewall > Shaper > Limiters.
+
+  mask="srcaddr" / mask="dstaddr" with maskbits="32" (mask per single host)
+  is what makes pfSense/OPNsense spin up one dynamic sub-queue per client IP
+  under each limiter, rather than sharing a single 5/10 Mbit pool across all
+  players.
+-->
+<pfsense>
+  <dnshaper>
+    <limiter>
+      <name>Player_Upload</name>
+      <bandwidth>
+        <item>
+          <bw>5</bw>
+          <bwscale>Mb</bwscale>
+        </item>
+      </bandwidth>
+      <mask>srcaddr</mask>
+      <maskbits>32</maskbits>
+      <descr>Per-player upload cap (client -&gt; WAN), masked per source IP</descr>
+    </limiter>
+
+    <limiter>
+      <name>Player_Download</name>
+      <bandwidth>
+        <item>
+          <bw>10</bw>
+          <bwscale>Mb</bwscale>
+        </item>
+      </bandwidth>
+      <mask>dstaddr</mask>
+      <maskbits>32</maskbits>
+      <descr>Per-player download cap (WAN -&gt; client), masked per destination IP</descr>
+    </limiter>
+
+    <!--
+      Slow-Mo throttle pipe (see qos-queues.xml for the Layer-7 match rules
+      that feed traffic into this limiter). Masked per source so multiple
+      simultaneous offenders don't share a single 256 Kbit/s pool.
+    -->
+    <limiter>
+      <name>Heavy_Traffic_Throttle</name>
+      <bandwidth>
+        <item>
+          <bw>256</bw>
+          <bwscale>Kb</bwscale>
+        </item>
+      </bandwidth>
+      <mask>srcaddr</mask>
+      <maskbits>32</maskbits>
+      <descr>Penalty pipe for BitTorrent/Steam/Netflix/YouTube/OS-update signatures</descr>
+    </limiter>
+  </dnshaper>
+
+  <!--
+    Attach to traffic: Firewall > Rules > VLAN30_PLAYER / VLAN40_PLAYER,
+    on the general "allow to WAN" rule, set:
+      In  pipe (client -> WAN, i.e. upload)   = Player_Upload
+      Out pipe (WAN -> client, i.e. download) = Player_Download
+  -->
+</pfsense>

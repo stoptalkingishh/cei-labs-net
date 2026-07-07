@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<!--
+  cei-labs-net :: QoS priority queues + rule ordering
+
+  MERGE FRAGMENT — see dns-redirect-nat.xml header for import notes.
+  Corresponds to Firewall > Shaper > Queues (PRIQ scheduler shown here;
+  HFSC works equivalently if you need guaranteed bandwidth floors instead
+  of pure priority).
+
+  Queue priority scale is 0 (lowest) - 7 (highest) on pfSense's PRIQ/HFSC.
+-->
+<pfsense>
+  <shaper>
+    <queue>
+      <name>qHigh</name>
+      <priority>7</priority>
+      <descr>DNS, ICMP, and Scoreboard/CTF-Infra (10.10.20.0/24) traffic</descr>
+    </queue>
+    <queue>
+      <name>qInteractive</name>
+      <priority>4</priority>
+      <descr>SSH and HTTP/HTTPS to published challenge ports</descr>
+    </queue>
+    <queue>
+      <name>qDefault</name>
+      <priority>2</priority>
+      <descr>Default/unclassified player traffic</descr>
+    </queue>
+    <!-- qHeavyThrottle is realized via the Heavy_Traffic_Throttle limiter
+         (see limiters.xml) rather than a priority queue, since the intent
+         is a hard bandwidth ceiling rather than a scheduling priority. -->
+  </shaper>
+
+  <!--
+    Filter rule ORDER matters — first match wins. Apply top-to-bottom on
+    each player VLAN interface (VLAN30_PLAYER, VLAN40_PLAYER):
+
+      1. block <VLAN30_NET> -> <VLAN30_NET>      (player isolation)
+         block <VLAN40_NET> -> <VLAN40_NET>
+      2. block tcp/853                            (DoT — see block-dot-doh.xml)
+      3. pass  udp/tcp 53 -> 127.0.0.1:53          queue=qHigh   (post DNS-NAT redirect)
+      4. pass  icmp                                queue=qHigh
+      5. pass  any -> 10.10.20.0/24                queue=qHigh   (Scoreboard/CTF Infra)
+      6. pass  <AppID/Zenarmor match alias>         limiter=Heavy_Traffic_Throttle
+         (BitTorrent, Steam, Netflix, YouTube, Windows/OS Update signatures)
+      7. pass  tcp/22                               queue=qInteractive
+         pass  any -> 10.10.20.0/24:<challenge-ports> queue=qInteractive
+      8. pass  any -> any                           queue=qDefault
+         in-pipe=Player_Upload  out-pipe=Player_Download
+  -->
+  <filter>
+    <rule>
+      <type>pass</type>
+      <interface>vlan30_player</interface>
+      <protocol>udp/tcp</protocol>
+      <source><any/></source>
+      <destination>
+        <address>127.0.0.1</address>
+        <port>53</port>
+      </destination>
+      <defaultqueue>qHigh</defaultqueue>
+      <descr>DNS -> qHigh</descr>
+    </rule>
+    <rule>
+      <type>pass</type>
+      <interface>vlan30_player</interface>
+      <protocol>icmp</protocol>
+      <source><any/></source>
+      <destination><any/></destination>
+      <defaultqueue>qHigh</defaultqueue>
+      <descr>ICMP -> qHigh</descr>
+    </rule>
+    <rule>
+      <type>pass</type>
+      <interface>vlan30_player</interface>
+      <protocol>tcp/udp</protocol>
+      <source><any/></source>
+      <destination><network>10.10.20.0/24</network></destination>
+      <defaultqueue>qHigh</defaultqueue>
+      <descr>Scoreboard/CTF Infra (VLAN20) -> qHigh</descr>
+    </rule>
+    <rule>
+      <type>pass</type>
+      <interface>vlan30_player</interface>
+      <protocol>tcp</protocol>
+      <source><any/></source>
+      <destination><port>22</port></destination>
+      <defaultqueue>qInteractive</defaultqueue>
+      <descr>SSH -> qInteractive</descr>
+    </rule>
+    <rule>
+      <type>pass</type>
+      <interface>vlan30_player</interface>
+      <protocol>tcp</protocol>
+      <source><any/></source>
+      <destination><any/></destination>
+      <defaultqueue>qDefault</defaultqueue>
+      <dnpipe>Player_Upload</dnpipe>
+      <pdnpipe>Player_Download</pdnpipe>
+      <descr>Default player egress -> qDefault, wrapped in per-IP limiters</descr>
+    </rule>
+    <!-- Duplicate the above rule block for vlan40_player. -->
+  </filter>
+</pfsense>

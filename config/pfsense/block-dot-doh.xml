@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!--
+  cei-labs-net :: DoT/DoH bypass-prevention fragment
+
+  MERGE FRAGMENT — see dns-redirect-nat.xml header for import notes.
+
+  These <filter> rules must be ordered ABOVE the general player-VLAN allow
+  rule (lower "priority"/higher in the list = evaluated first, first match
+  wins on pfSense/OPNsense).
+
+  The DoH blocklist toggle itself is not expressible as a filter rule; it is
+  a checkbox in the Unbound/DNS Resolver service config
+  (dnsresolver > python / block_doh) — see the <resolver> block below.
+-->
+<pfsense>
+  <filter>
+    <rule>
+      <type>block</type>
+      <interface>vlan30_player</interface>
+      <protocol>tcp</protocol>
+      <source><any/></source>
+      <destination>
+        <any/>
+        <port>853</port>
+      </destination>
+      <descr>Block DNS-over-TLS (DoT) egress from Player Wi-Fi</descr>
+    </rule>
+    <rule>
+      <type>block</type>
+      <interface>vlan40_player</interface>
+      <protocol>tcp</protocol>
+      <source><any/></source>
+      <destination>
+        <any/>
+        <port>853</port>
+      </destination>
+      <descr>Block DNS-over-TLS (DoT) egress from Player Wired</descr>
+    </rule>
+  </filter>
+
+  <!--
+    pfSense: Services > DNS Resolver > General Settings
+      - Enable "Python Module"
+      - Enable the built-in DoH-blocking Python snippet, or install
+        pfBlockerNG and subscribe to a maintained public DoH provider feed.
+
+    OPNsense: Services > Unbound DNS > General
+      - Enable "Block DoH Servers" (uses Unbound's bundled doh_domains /
+        doh_ips list, updated with the package — no extra install needed).
+  -->
+  <resolver>
+    <enable>1</enable>
+    <python_module>1</python_module>
+    <block_doh>1</block_doh>
+    <descr>Best-effort block of known public DNS-over-HTTPS endpoints</descr>
+  </resolver>
+</pfsense>
