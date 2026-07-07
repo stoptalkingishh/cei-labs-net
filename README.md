@@ -26,7 +26,8 @@ cei-labs-net/
 ├── README.md
 ├── docs/
 │   ├── network-topology.md      # Physical wiring, VLAN/DHCP map, router-on-a-stick design
-│   └── security-qos-policy.md   # DNS interception, DoH/DoT blocking, limiters, QoS queues
+│   ├── security-qos-policy.md   # DNS interception, DoH/DoT blocking, limiters, QoS queues
+│   └── verification-checklist.md # Pre-event runbook to confirm every control actually works
 ├── config/
 │   ├── pfsense/                 # pfSense XML fragments (aliases, limiters, NAT, filter rules)
 │   └── opnsense/                # OPNsense equivalents (Shaper, Unbound, Zenarmor notes)
@@ -68,6 +69,10 @@ DNS-lockdown, traffic-shaping, and QoS configuration.
    fragments live under `config/pfsense/` and `config/opnsense/`).
 4. Stand up the CTF Infrastructure host (VLAN 20) and deploy challenges with
    the hardened template in [`docker/docker-compose.yml`](docker/docker-compose.yml).
+5. Before opening registration, run every check in
+   [`docs/verification-checklist.md`](docs/verification-checklist.md) —
+   isolation, DNS interception, DoT/DoH blocking, limiters, QoS, and Docker
+   hardening all need to be confirmed live, not assumed from config.
 
 ## License
 
