@@ -1,0 +1,69 @@
+# cei-labs-net :: Hardened challenge deployment template
+#
+# Deploy this on the VLAN 20 (CTF Infrastructure) Docker host. It keeps the
+# infra/engine network separate from the per-challenge network, and applies
+# the resource/privilege constraints needed so a single misbehaving or
+# attacked challenge container (fork bomb, memory bomb, runaway process from
+# a CTF exploit) cannot take down the physical host or other challenges.
+#
+# Usage: copy this file per-challenge (or per-challenge-set), rename the
+# service/network, and fill in the values from .env.example.
+
+services:
+  challenge:
+    image: ${CHALLENGE_IMAGE}
+    container_name: ${CHALLENGE_NAME:-ctf-challenge}
+    restart: on-failure:5          # cap restart loops instead of infinite retry
+    networks:
+      - challenge_net               # isolated per-challenge network only
+    ports:
+      - "${CHALLENGE_PORT}:${CHALLENGE_PORT}"
+    read_only: true                 # container filesystem is immutable at runtime
+    tmpfs:
+      - /tmp:size=32m,mode=1777     # writable scratch space, capped and non-persistent
+    security_opt:
+      - no-new-privileges:true      # block privilege escalation via setuid binaries
+    cap_drop:
+      - ALL                        # drop all Linux capabilities by default
+    # Only re-add specific capabilities a challenge genuinely needs, e.g.:
+    # cap_add:
+    #   - NET_BIND_SERVICE
+    pids_limit: 128                 # hard cap on process/thread count — fork-bomb defense
+    mem_limit: 256m                 # hard memory ceiling
+    mem_reservation: 128m           # soft memory reserve (scheduling hint)
+    memswap_limit: 256m             # disallow swap beyond mem_limit (no swap headroom)
+    cpus: 0.5                       # hard CPU ceiling (half a core)
+    ulimits:
+      nproc: 128
+      nofile:
+        soft: 1024
+        hard: 2048
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  # Dedicated bridge per challenge (or per challenge-set). Deliberately NOT
+  # attached to the infra/engine network — challenge containers must never
+  # be able to reach the scoreboard engine, database, or other
+  # infrastructure services directly.
+  challenge_net:
+    driver: bridge
+    internal: false   # set true if the challenge needs no outbound internet at all
+
+# ---------------------------------------------------------------------------
+# Infrastructure engine network (scoreboard, database, etc.) belongs in its
+# own compose file/stack, on a SEPARATE user-defined bridge, e.g.:
+#
+#   networks:
+#     infra_net:
+#       driver: bridge
+#       internal: true   # no direct WAN egress for backend services
+#
+# Never share a network between the engine stack and challenge_net. If a
+# challenge legitimately needs to call an engine API (e.g. a flag-submission
+# webhook), expose only that single endpoint through a narrowly-scoped
+# reverse proxy/service on its own network, rather than joining networks.
+# ---------------------------------------------------------------------------

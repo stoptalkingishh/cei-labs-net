@@ -1,0 +1,18 @@
+# Local secrets / per-deployment overrides — never commit real challenge
+# images, flags, or credentials.
+.env
+docker/.env
+**/.env.local
+
+# pfSense/OPNsense full config backups (may contain hashed creds, WAN info)
+*.config.xml.bak
+config-backups/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editor cruft
+.vscode/
+.idea/
+*.swp
