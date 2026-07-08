@@ -94,6 +94,46 @@ egress IP needs to be allowed to reach CTFd's `/api/v1/*` — the
 inter-VLAN policy table doesn't currently need any change for this, since
 Staff (VLAN 50) already has unrestricted access to VLAN 20.
 
+### 6. TLS trust — confirmed root cause and fix (live-tested)
+
+Cloning both repos and running `cei-labs-engine`'s Swarm stack against
+`CEI-Labs-Wargames`' `deploy.sh` locally surfaced the actual failure mode,
+not just the suspected one:
+
+- **What players see:** `cei-labs-engine`'s LAN/venue default
+  (`USE_LETSENCRYPT=false`) presents a self-signed or staff-provided cert.
+  A browser warning is expected and acceptable for a LAN event — no
+  `cei-labs-net` action needed.
+- **What broke `deploy.sh`:** the current `ctfcli` package (0.1.x) reads a
+  config key called `ssl_verify` (default `True`) — **not** `insecure`,
+  which `deploy.sh` was writing and which `ctfcli` silently ignores. Fixed
+  in `CEI-Labs-Wargames` (Phase 4 of the integration work) with an opt-in
+  `CTFD_INSECURE=true` env var that writes `ssl_verify = false` only when
+  explicitly set. Confirmed live: `ctf challenge sync` succeeded end-to-end
+  once this was in place.
+- **`cei-labs-net` implication:** none directly — this was purely a
+  `CEI-Labs-Wargames` config-generation bug. It's documented here because
+  it was discovered while verifying this repo's DNS/TLS assumptions were
+  accurate, and because whoever runs `deploy.sh` against a self-signed
+  `cei-labs-engine` instance needs `CTFD_INSECURE=true` set.
+
+### 7. Two of three curriculum tracks depend on the open internet, not VLAN 20
+
+`CEI-Labs-Wargames`' Bandit and Krypton/Natas-style challenges (confirmed
+by reading `scripts/build_bandit.py` etc.) are pure CTFd metadata — no
+containers, no images — pointing players at real
+`*.labs.overthewire.org` hosts over SSH (`bandit.labs.overthewire.org:2220`
+and similar). This traffic never touches VLAN 20 at all.
+
+Implication for `cei-labs-net`: this traffic needs outbound reachability
+from VLAN 30/40, which the existing default-allow-to-WAN rule already
+covers — no firewall change needed. But it rides the standard
+`qDefault`/`Player_Upload`/`Player_Download` path, not `qHigh`, and a
+venue internet outage or an OverTheWire outage silently breaks two of the
+three curriculum tracks. Add a pre-event connectivity check to
+`verification-checklist.md` (done) rather than assuming it's covered by
+the VLAN-20 checks.
+
 ## What's out of scope for `cei-labs-net`
 
 This repo does not, and should not, contain: CTFd configuration, challenge

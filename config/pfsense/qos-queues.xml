@@ -45,6 +45,9 @@
          (BitTorrent, Steam, Netflix, YouTube, Windows/OS Update signatures)
       7. pass  tcp/22                               queue=qInteractive
          pass  any -> 10.10.20.0/24:<challenge-ports> queue=qInteractive
+         pass  tcp -> 10.10.20.0/24:30000-32767     queue=qInteractive
+         (cei-labs-engine's orchestrator SSH/analyst-workspace ports —
+         live-confirmed range, see docs/network-topology.md)
       8. pass  any -> any                           queue=qDefault
          in-pipe=Player_Upload  out-pipe=Player_Download
   -->
@@ -87,6 +90,18 @@
       <destination><port>22</port></destination>
       <defaultqueue>qInteractive</defaultqueue>
       <descr>SSH -> qInteractive</descr>
+    </rule>
+    <rule>
+      <type>pass</type>
+      <interface>vlan30_player</interface>
+      <protocol>tcp</protocol>
+      <source><any/></source>
+      <destination>
+        <network>10.10.20.0/24</network>
+        <port>30000-32767</port>
+      </destination>
+      <defaultqueue>qInteractive</defaultqueue>
+      <descr>cei-labs-engine orchestrator SSH/analyst-workspace ports -> qInteractive</descr>
     </rule>
     <rule>
       <type>pass</type>
@@ -137,6 +152,18 @@
       <destination><port>22</port></destination>
       <defaultqueue>qInteractive</defaultqueue>
       <descr>SSH -> qInteractive</descr>
+    </rule>
+    <rule>
+      <type>pass</type>
+      <interface>vlan40_player</interface>
+      <protocol>tcp</protocol>
+      <source><any/></source>
+      <destination>
+        <network>10.10.20.0/24</network>
+        <port>30000-32767</port>
+      </destination>
+      <defaultqueue>qInteractive</defaultqueue>
+      <descr>cei-labs-engine orchestrator SSH/analyst-workspace ports -> qInteractive</descr>
     </rule>
     <rule>
       <type>pass</type>

@@ -33,7 +33,11 @@ and, separately, a wired hardline port (VLAN 40) for each check below.
       `10.10.50.0/24` (Staff) — `ping`/`nmap -p 22,443` should be fully
       blocked.
 - [ ] VLAN 30/40 client **can** reach published challenge ports on
-      `10.10.20.0/24` (Docker host / CTF Infra).
+      `10.10.20.0/24` (Docker host / CTF Infra), including the
+      `30000-32767/tcp` range if VLAN 20 runs `cei-labs-engine` (its
+      orchestrator's SSH/analyst-workspace ports — confirm with
+      `nc -zv <ctf-infra-ip> 32000` or similar against a real allocated
+      instance).
 - [ ] `nmap -sn 10.10.32.0/22` from a player client returns **no other
       hosts** besides the gateway (validates isolation holds up under an
       actual scan, since the event explicitly expects players to run
@@ -53,6 +57,20 @@ and, separately, a wired hardline port (VLAN 40) for each check below.
 - [ ] A domain on Unbound's blocklist (if any content filtering is layered
       on top) resolves/fails as expected — confirms the redirect actually
       lands on the intended Unbound instance, not just any resolver.
+- [ ] If VLAN 20 runs `cei-labs-engine`: confirm the **wildcard** override
+      resolves both the fixed hostname (`ctfd.<base-domain>`) and a
+      synthetic subdomain under the instance pattern (e.g.
+      `test.apps.<base-domain>`) — a non-wildcard override will pass the
+      first check and silently fail the second, breaking every
+      orchestrator-launched challenge instance for players. See
+      `ecosystem-architecture.md` §2.
+- [ ] Confirm outbound reachability to `*.labs.overthewire.org` (e.g.
+      `nc -zv bandit.labs.overthewire.org 2220`) from a VLAN 30/40 client —
+      if `CEI-Labs-Wargames`' Bandit/Krypton/Natas content is deployed,
+      two of the three curriculum tracks depend on this external service
+      being reachable, not on VLAN 20 at all (`ecosystem-architecture.md`
+      §7). A venue firewall or filtering proxy blocking non-standard SSH
+      ports would silently break these tracks.
 
 ## 4. DoT / DoH bypass prevention
 

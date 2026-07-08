@@ -87,3 +87,37 @@ Isolation, RF-level) for Wi-Fi, and once at the firewall via an explicit
 "block VLAN30 net → VLAN30 net" / "block VLAN40 net → VLAN40 net" rule
 above the general allow rules, so a player who ARP-spoofs or plugs a switch
 into their hardline port still can't reach a neighbor.
+
+### "Challenge ports only" on VLAN 20 — the actual port list
+
+If VLAN 20 runs `cei-labs-engine` (one reference deployment this network
+supports, not a hard requirement — see
+[`ecosystem-architecture.md`](ecosystem-architecture.md)), "challenge
+ports" concretely means:
+
+| Port(s) | Protocol | Purpose |
+| :--- | :--- | :--- |
+| 80, 443 | TCP | Traefik ingress (CTFd, and Traefik-routed challenge instances) |
+| 30000–32767 | TCP | `cei-labs-engine`'s orchestrator: directly-published ports for `single-target` SSH-style instances and bulk-spawned analyst/Kali workspaces (confirmed live — see `ORCHESTRATOR_SSH_PORT_RANGE_START/END` and `ANALYST_BASE_PORT` in `cei-labs-engine`'s `docker/.env.example`) |
+
+Any VLAN-20 deployment that isn't `cei-labs-engine` will have its own port
+list — treat the table above as the concrete instance of "challenge ports
+only" for that one reference deployment, not a universal constant.
+
+### Swarm inter-node ports (multi-host VLAN 20 only)
+
+If `cei-labs-engine` (or any Docker Swarm workload) spans more than one
+physical host on VLAN 20, those hosts need to reach each other — not
+players — on:
+
+| Port(s) | Protocol | Purpose |
+| :--- | :--- | :--- |
+| 2377 | TCP | Swarm cluster management |
+| 7946 | TCP + UDP | Node-to-node gossip |
+| 4789 | UDP | Overlay network data path (VXLAN) |
+
+This is intra-VLAN-20 traffic between the CTF Infra hosts themselves — it
+does **not** need a player-facing firewall rule, since pfSense/OPNsense
+don't restrict same-subnet host-to-host traffic by default. Only relevant
+if VLAN 20 is deliberately built as a multi-node cluster; a single-host
+VLAN 20 deployment can ignore this section entirely.
