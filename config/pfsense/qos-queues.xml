@@ -33,7 +33,7 @@
 
   <!--
     Filter rule ORDER matters — first match wins. Apply top-to-bottom on
-    each player VLAN interface (VLAN30_PLAYER, VLAN40_PLAYER):
+    each player VLAN interface (vlan30_player, vlan40_player):
 
       1. block <VLAN30_NET> -> <VLAN30_NET>      (player isolation)
          block <VLAN40_NET> -> <VLAN40_NET>
@@ -99,6 +99,55 @@
       <pdnpipe>Player_Download</pdnpipe>
       <descr>Default player egress -> qDefault, wrapped in per-IP limiters</descr>
     </rule>
-    <!-- Duplicate the above rule block for vlan40_player. -->
+    <rule>
+      <type>pass</type>
+      <interface>vlan40_player</interface>
+      <protocol>udp/tcp</protocol>
+      <source><any/></source>
+      <destination>
+        <address>127.0.0.1</address>
+        <port>53</port>
+      </destination>
+      <defaultqueue>qHigh</defaultqueue>
+      <descr>DNS -> qHigh</descr>
+    </rule>
+    <rule>
+      <type>pass</type>
+      <interface>vlan40_player</interface>
+      <protocol>icmp</protocol>
+      <source><any/></source>
+      <destination><any/></destination>
+      <defaultqueue>qHigh</defaultqueue>
+      <descr>ICMP -> qHigh</descr>
+    </rule>
+    <rule>
+      <type>pass</type>
+      <interface>vlan40_player</interface>
+      <protocol>tcp/udp</protocol>
+      <source><any/></source>
+      <destination><network>10.10.20.0/24</network></destination>
+      <defaultqueue>qHigh</defaultqueue>
+      <descr>Scoreboard/CTF Infra (VLAN20) -> qHigh</descr>
+    </rule>
+    <rule>
+      <type>pass</type>
+      <interface>vlan40_player</interface>
+      <protocol>tcp</protocol>
+      <source><any/></source>
+      <destination><port>22</port></destination>
+      <defaultqueue>qInteractive</defaultqueue>
+      <descr>SSH -> qInteractive</descr>
+    </rule>
+    <rule>
+      <type>pass</type>
+      <interface>vlan40_player</interface>
+      <protocol>tcp</protocol>
+      <source><any/></source>
+      <destination><any/></destination>
+      <defaultqueue>qDefault</defaultqueue>
+      <dnpipe>Player_Upload</dnpipe>
+      <pdnpipe>Player_Download</pdnpipe>
+      <descr>Default player egress -> qDefault, wrapped in per-IP limiters</descr>
+    </rule>
   </filter>
 </pfsense>

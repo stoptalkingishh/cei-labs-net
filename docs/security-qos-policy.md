@@ -19,7 +19,7 @@ destination IP the client thinks it's talking to.
 
 | Field | Value |
 | :--- | :--- |
-| Interface | `VLAN30_PLAYER`, `VLAN40_PLAYER` (one rule per interface, or a floating rule applied to both) |
+| Interface | `vlan30_player`, `vlan40_player` (one rule per interface, or a floating rule applied to both) |
 | Protocol | `TCP/UDP` |
 | Destination | `any` |
 | Destination port range | `53 (DNS)` |
@@ -49,7 +49,7 @@ invisible to the port-53 NAT rule above.
 
 **Block DNS-over-TLS (DoT), port 853**
 
-Firewall → Rules → `VLAN30_PLAYER` / `VLAN40_PLAYER` — add a **Block** rule
+Firewall → Rules → `vlan30_player` / `vlan40_player` — add a **Block** rule
 above the general allow rule:
 
 | Field | Value |
@@ -121,7 +121,12 @@ traffic is shoved into a deliberately crippled pipe.
 | `qHigh` | **7 (highest)** | DNS (port 53 — post-NAT-redirect traffic to Unbound), ICMP (ping), any traffic to the Scoreboard Engine host (`10.10.20.X`, VLAN 20) |
 | `qInteractive` | **4** | SSH (port 22), HTTP/HTTPS to published challenge ports on VLAN 20 |
 | `qDefault` | 2 | Everything else not otherwise classified |
-| `qHeavyThrottle` | **1 (lowest)** | See §4.2 — bulk/streaming/update traffic |
+
+Bulk/streaming/update traffic is **not** a fourth priority queue — it is
+diverted into the `Heavy_Traffic_Throttle` limiter pipe instead (§4.2),
+which enforces a hard 256 Kbit/s ceiling rather than a scheduling priority.
+`config/pfsense/qos-queues.xml` therefore only defines three `<queue>`
+elements; do not create a `qHeavyThrottle` queue object in the GUI.
 
 Implement via **Firewall → Rules**, per VLAN 30/40, ordered top-to-bottom:
 rules for `qHigh` matches first (DNS/ICMP/scoreboard-IP), then

@@ -121,17 +121,36 @@ Run these against a disposable test service deployed from
       stops it from taking down the host (`docker stats` shows the
       container hitting its pid ceiling and erroring, host stays
       responsive).
+- [ ] Confirm the CPU ceiling: run a busy loop inside the container
+      (`docker exec <container> sh -c "yes > /dev/null &"`, repeat 2-3x to
+      spin multiple cores' worth of load) and watch `docker stats
+      <container>` — CPU% should plateau around `50%` (one core =
+      `100%` in `docker stats` accounting), confirming `cpus: 0.5` is
+      capping it rather than letting it consume the whole host CPU.
 - [ ] Confirm the container cannot reach the infra/engine network:
       `docker exec <container> ping <engine-host-ip>` fails (validates
       `challenge_net` isolation from `infra_net`).
-- [ ] Kill the container process repeatedly (`docker kill`) 6 times in a
-      row and confirm Docker stops restarting it after 5 attempts
-      (`restart: on-failure:5` — check `docker ps -a` status shows
-      "Exited" and not endlessly cycling).
-- [ ] Confirm memory/CPU ceilings hold under a stress test
-      (`docker exec <container> stress --vm 1 --vm-bytes 512M` or
-      similar) — container should be OOM-killed at the `mem_limit: 256m`
-      boundary rather than consuming host memory beyond it.
+- [ ] Confirm the restart cap, **not** with `docker kill`/`docker stop` —
+      Docker treats those as user-initiated and will not re-trigger
+      `on-failure` at all (`RestartCount` stays 0 no matter how many times
+      you kill it). Instead override the test container's command to fail
+      on its own, e.g. add a `docker-compose.override.yml` setting
+      `command: ["sh", "-c", "exit 1"]`, bring it up, wait ~10s, and confirm
+      `docker inspect <container> --format '{{.RestartCount}} {{.State.Status}}'`
+      shows `5 exited` — Docker retried exactly 5 times on genuine failure,
+      then stopped.
+- [ ] Confirm memory ceilings hold under real memory pressure. Installing a
+      stress tool via a package manager (`apk add stress`) will fail inside
+      the hardened container — `read_only: true` blocks the package
+      manager's own lock/log files, which is itself confirmation the
+      read-only rootfs is working. Either (a) bake a stress tool into the
+      challenge image at build time and run it against the real container,
+      or (b) validate the underlying mem_limit/OOM mechanism directly with
+      a throwaway container at the same limit:
+      `docker run --rm --memory=256m alpine sh -c "a=$(cat /dev/zero | tr '\0' 'a' | head -c 400000000); echo done"`
+      — expect exit code `137` (SIGKILL from the memory cgroup), confirming
+      the same `mem_limit` value used in `docker-compose.yml` gets enforced
+      by the host.
 
 ---
 

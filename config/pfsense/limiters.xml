@@ -58,7 +58,7 @@
   </dnshaper>
 
   <!--
-    Attach to traffic: Firewall > Rules > VLAN30_PLAYER / VLAN40_PLAYER,
+    Attach to traffic: Firewall > Rules > vlan30_player / vlan40_player,
     on the general "allow to WAN" rule, set:
       In  pipe (client -> WAN, i.e. upload)   = Player_Upload
       Out pipe (WAN -> client, i.e. download) = Player_Download

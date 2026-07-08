@@ -42,8 +42,11 @@ Notes:
   isolation / peer-to-peer blocking) enabled at the radio level. This stops
   same-SSID players from reaching each other directly over the air, which
   the switch/firewall ACLs cannot see or stop.
-- Reserve a handful of switch ports beyond 11–24 unassigned/disabled as
-  spares; do not leave unused ports in an access VLAN by default.
+- Ports 6–9 are unassigned by this layout (Ports 1–5 are the uplink/AP
+  trunks, 10 is the Docker host, 11–24 are wired stations). Leave them
+  disabled/spare rather than defaulting them into an access VLAN, so an
+  unauthorized device plugged into an open port doesn't land on a live
+  network.
 
 ## 2. VLAN & DHCP Subnet Map
 
