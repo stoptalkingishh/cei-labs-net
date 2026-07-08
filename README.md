@@ -76,4 +76,4 @@ DNS-lockdown, traffic-shaping, and QoS configuration.
 
 ## License
 
-Internal event infrastructure — adapt freely for your own CTF deployments.
+Licensed under the [GNU General Public License v3.0](LICENSE).
