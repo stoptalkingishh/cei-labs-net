@@ -164,7 +164,10 @@ surface issues not present during bench testing:
    nearest one) and repeat §1 (DHCP) and §2 (isolation) once per AP.
 2. Run one DNS interception check (§3) and one bandwidth check (§5) from
    the wired hardline row.
-3. Confirm the Scoreboard Engine host (`10.10.20.X`) is reachable and
+3. Confirm CTFd (`cei-labs-engine`'s Traefik on `10.10.20.0/24:443`,
+   reached by its configured hostname — see
+   [`ecosystem-architecture.md`](ecosystem-architecture.md) §2 for why the
+   hostname matters here, not just the IP) is reachable and
    `qHigh`-prioritized from at least one Wi-Fi and one wired client.
 4. Spot-check `Firewall → Shaper → Pipes` / `Zenarmor` dashboard shows
    near-zero baseline traffic in `Heavy_Traffic_Throttle` before doors open

@@ -4,11 +4,18 @@ Configuration files, firewall rule sets, traffic shaping limits, and Docker
 deployment structures required to host a high-density, zero-software-cost
 Capture The Flag (CTF) environment for up to **80 active participants**.
 
-This repository is part of the CEI-Labs ecosystem, alongside:
+This repository is **one of three** that together make up a full CTF/training
+deployment — none of the three stands alone:
 
-- `CEI-Labs-Wargames` — challenge content and scoring logic
-- `cei-labs-engine` — the CTF scoreboard/engine application
-- `cei-labs-net` *(this repo)* — network, security, and container-hosting infrastructure
+- [`cei-labs-engine`](https://github.com/stoptalkingishh/cei-labs-engine) — the platform itself: a Docker Swarm stack (Traefik + CTFd + Challenge Instance Orchestrator + Juice Shop/Kali-noVNC/analyst containers) that runs on the VLAN 20 host(s) this repo provisions
+- [`CEI-Labs-Wargames`](https://github.com/stoptalkingishh/CEI-Labs-Wargames) — challenge content pipeline; pushes Bandit/Krypton/Natas-based challenges into a running `cei-labs-engine` CTFd instance via `ctfcli`
+- `cei-labs-net` *(this repo)* — network, security, and container-hosting infrastructure that the other two run on top of
+
+See [`docs/ecosystem-architecture.md`](docs/ecosystem-architecture.md) for
+exactly how the three interconnect (DNS interception vs. CTFd's
+hostname-based routing, what "Scoreboard Engine host" actually means,
+where the Docker template in this repo fits vs. `cei-labs-engine`'s own
+Swarm stack, and admin-surface isolation).
 
 The core requirements this repo satisfies: a zero-cost software stack on a
 **pfSense/OPNsense** core, paired with a multi-node budget wireless network,
@@ -27,7 +34,8 @@ cei-labs-net/
 ├── docs/
 │   ├── network-topology.md      # Physical wiring, VLAN/DHCP map, router-on-a-stick design
 │   ├── security-qos-policy.md   # DNS interception, DoH/DoT blocking, limiters, QoS queues
-│   └── verification-checklist.md # Pre-event runbook to confirm every control actually works
+│   ├── verification-checklist.md # Pre-event runbook to confirm every control actually works
+│   └── ecosystem-architecture.md # How this repo, cei-labs-engine, and CEI-Labs-Wargames fit together
 ├── config/
 │   ├── pfsense/                 # pfSense XML fragments (aliases, limiters, NAT, filter rules)
 │   └── opnsense/                # OPNsense equivalents (Shaper, Unbound, Zenarmor notes)
@@ -67,8 +75,15 @@ DNS-lockdown, traffic-shaping, and QoS configuration.
 3. Apply the firewall/NAT/limiter rules in
    [`docs/security-qos-policy.md`](docs/security-qos-policy.md) (reference
    fragments live under `config/pfsense/` and `config/opnsense/`).
-4. Stand up the CTF Infrastructure host (VLAN 20) and deploy challenges with
-   the hardened template in [`docker/docker-compose.yml`](docker/docker-compose.yml).
+4. Stand up the CTF Infrastructure host(s) on VLAN 20 (`docker swarm init`,
+   or join via `cei-labs-engine`'s Ansible playbook for multi-host) and
+   deploy [`cei-labs-engine`](https://github.com/stoptalkingishh/cei-labs-engine)'s
+   Swarm stack — that's what actually serves CTFd/Traefik/challenges on
+   this VLAN. The hardened template in
+   [`docker/docker-compose.yml`](docker/docker-compose.yml) here is for
+   standalone challenge containers deployed *outside* that orchestrator,
+   not a replacement for it (see
+   [`docs/ecosystem-architecture.md`](docs/ecosystem-architecture.md) §3).
 5. Before opening registration, run every check in
    [`docs/verification-checklist.md`](docs/verification-checklist.md) —
    isolation, DNS interception, DoT/DoH blocking, limiters, QoS, and Docker
