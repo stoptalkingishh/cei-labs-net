@@ -134,6 +134,22 @@ three curriculum tracks. Add a pre-event connectivity check to
 `verification-checklist.md` (done) rather than assuming it's covered by
 the VLAN-20 checks.
 
+**Status update (2026-07-09):** all three tracks are being migrated to
+self-hosted `cei-labs-engine` instances (one persistent SSH box per team
+for Bandit/Krypton via `single-target`, one shared attacker + target
+range per team for Natas via `target-attacker`) — see
+`CEI-Labs-Wargames/docs/self-hosted-wargames-blueprint.md`. In progress
+on a feature branch, not yet on `main` in either repo. Once merged, this
+finding is resolved: no outbound-internet dependency, all traffic stays
+on VLAN 20, and the connectivity check above becomes unnecessary (leave
+it in the checklist until the migration actually lands on `main`).
+Confirmed while building that migration: `single-target` (Bandit/Krypton)
+already falls within the documented `30000–32767` range above;
+`target-attacker` (Natas) uses Traefik exclusively (no directly-published
+port at all for the attacker or target), so it needs nothing beyond the
+already-documented `80,443` — **no `cei-labs-net` change is required**
+for either instance type.
+
 ## What's out of scope for `cei-labs-net`
 
 This repo does not, and should not, contain: CTFd configuration, challenge
