@@ -12,7 +12,7 @@ each depends on the layer below it:
 
 ```
 Player (VLAN 30/40)
-   │  DNS forced to local Unbound, DoT/DoH blocked,
+   │  DNS forced to local Unbound, DoT/DoH/DoQ blocked,
    │  5/10 Mbit per-IP cap, QoS prioritizes DNS/ICMP/scoreboard
    ▼
 pfSense/OPNsense  ──(cei-labs-net)──

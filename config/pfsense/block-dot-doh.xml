@@ -1,12 +1,21 @@
 <?xml version="1.0"?>
 <!--
-  cei-labs-net :: DoT/DoH bypass-prevention fragment
+  cei-labs-net :: DoT/DoH/DoQ bypass-prevention fragment
 
   MERGE FRAGMENT — see dns-redirect-nat.xml header for import notes.
 
   These <filter> rules must be ordered ABOVE the general player-VLAN allow
   rule (lower "priority"/higher in the list = evaluated first, first match
   wins on pfSense/OPNsense).
+
+  Port 853 is blocked on BOTH transports, not just TCP: DNS-over-TLS (DoT,
+  RFC 7858) rides TCP/853, but DNS-over-QUIC (DoQ, RFC 9250) rides UDP/853
+  — a TCP-only block leaves DoQ as a live, unaddressed DNS-interception
+  bypass for any resolver/client that supports it (increasingly common;
+  several major public resolvers already offer DoQ endpoints). Blocking
+  both transports on the same port is the actual complete control here,
+  not an enhancement — a TCP-only rule was previously documented as
+  sufficient and wasn't.
 
   The DoH blocklist toggle itself is not expressible as a filter rule; it is
   a checkbox in the Unbound/DNS Resolver service config
@@ -35,6 +44,28 @@
         <port>853</port>
       </destination>
       <descr>Block DNS-over-TLS (DoT) egress from Player Wired</descr>
+    </rule>
+    <rule>
+      <type>block</type>
+      <interface>vlan30_player</interface>
+      <protocol>udp</protocol>
+      <source><any/></source>
+      <destination>
+        <any/>
+        <port>853</port>
+      </destination>
+      <descr>Block DNS-over-QUIC (DoQ) egress from Player Wi-Fi</descr>
+    </rule>
+    <rule>
+      <type>block</type>
+      <interface>vlan40_player</interface>
+      <protocol>udp</protocol>
+      <source><any/></source>
+      <destination>
+        <any/>
+        <port>853</port>
+      </destination>
+      <descr>Block DNS-over-QUIC (DoQ) egress from Player Wired</descr>
     </rule>
   </filter>
 

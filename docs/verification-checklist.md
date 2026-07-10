@@ -72,18 +72,27 @@ and, separately, a wired hardline port (VLAN 40) for each check below.
       §7). A venue firewall or filtering proxy blocking non-standard SSH
       ports would silently break these tracks.
 
-## 4. DoT / DoH bypass prevention
+## 4. DoT / DoH / DoQ bypass prevention
 
 - [ ] `openssl s_client -connect 1.1.1.1:853` from a player client fails to
-      connect (confirms port 853 block).
+      connect (confirms the TCP/853 DoT block).
+- [ ] Confirm the UDP/853 DoQ block separately — `openssl s_client` above
+      only tests TCP. Use a DoQ-capable client/tool (e.g. `q` or `kdig`
+      with `+quic` if available) against a known DoQ resolver, or at
+      minimum confirm via `Diagnostics → States` (pfSense) / `Firewall →
+      Log Files → Live View` (OPNsense) that a raw UDP/853 probe
+      (`nc -u -zv 1.1.1.1 853` or similar) hits the block rule, not the
+      default-allow. Don't skip this because the TCP check passed — they
+      are two separate rules on two separate protocols.
 - [ ] A browser on the test client with DoH manually enabled and pointed at
       a known public DoH endpoint (e.g. Cloudflare's `1.1.1.1` DoH profile)
       either fails to resolve or is observably intercepted — check
       `Firewall → Log Files` for a block hit, or confirm resolution still
       routes through local Unbound.
 - [ ] Note in the event runbook that DoH blocking is best-effort (signature
-      list-based) — do not treat step 2 as a hard guarantee, only as
-      confirmation the current list is working.
+      list-based) — the DoT/DoQ port-853 blocks are not (hard port
+      blocks); do not treat the DoH check above as a hard guarantee, only
+      as confirmation the current list is working.
 
 ## 5. Per-IP bandwidth limiters
 

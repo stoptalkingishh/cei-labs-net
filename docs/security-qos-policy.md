@@ -50,16 +50,22 @@ XML reference: [`config/pfsense/dns-redirect-nat.xml`](../config/pfsense/dns-red
 
 ---
 
-## 2. Advanced Bypass Prevention (DoH / DoT)
+## 2. Advanced Bypass Prevention (DoH / DoT / DoQ)
 
 Redirecting port 53 stops plain DNS, but modern clients (browsers, OSes)
 fall back to encrypted DNS which rides over normal HTTPS/TLS ports and is
 invisible to the port-53 NAT rule above.
 
-**Block DNS-over-TLS (DoT), port 853**
+**Block DNS-over-TLS (DoT) and DNS-over-QUIC (DoQ), port 853**
 
-Firewall → Rules → `vlan30_player` / `vlan40_player` — add a **Block** rule
-above the general allow rule:
+DoT (RFC 7858) and DoQ (RFC 9250) both use port 853 — DoT over TCP, DoQ
+over UDP. A TCP-only block leaves DoQ as a live, unblocked bypass
+channel; both transports need their own rule. Several major public
+resolvers already offer DoQ endpoints, so this isn't a hypothetical
+future concern.
+
+Firewall → Rules → `vlan30_player` / `vlan40_player` — add **two Block
+rules** above the general allow rule (same port, different protocol):
 
 | Field | Value |
 | :--- | :--- |
@@ -67,6 +73,13 @@ above the general allow rule:
 | Protocol | TCP |
 | Destination port | `853` |
 | Description | `Block DoT (DNS-over-TLS)` |
+
+| Field | Value |
+| :--- | :--- |
+| Action | Block |
+| Protocol | UDP |
+| Destination port | `853` |
+| Description | `Block DoQ (DNS-over-QUIC)` |
 
 **Block DNS-over-HTTPS (DoH)**
 
@@ -84,9 +97,11 @@ port alone — it requires signature/hostname-based blocking:
   DoH endpoint domains/IPs under `unbound/doh_domains` / `doh_ips`). This
   is free and requires no additional package.
 
-Both toggles are best-effort (the list of public DoH endpoints changes),
-so treat this as defense-in-depth on top of the port-53 NAT redirect, not a
-standalone guarantee.
+The DoH toggles are best-effort (the list of public DoH endpoints
+changes over time); the DoT/DoQ port-853 blocks above are not — they're
+a hard block on the port regardless of provider. Treat all of this as
+defense-in-depth on top of the port-53 NAT redirect, not a standalone
+guarantee.
 
 XML reference: [`config/pfsense/block-dot-doh.xml`](../config/pfsense/block-dot-doh.xml)
 

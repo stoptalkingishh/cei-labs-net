@@ -33,7 +33,7 @@ cei-labs-net/
 ├── README.md
 ├── docs/
 │   ├── network-topology.md      # Physical wiring, VLAN/DHCP map, router-on-a-stick design
-│   ├── security-qos-policy.md   # DNS interception, DoH/DoT blocking, limiters, QoS queues
+│   ├── security-qos-policy.md   # DNS interception, DoH/DoT/DoQ blocking, limiters, QoS queues
 │   ├── verification-checklist.md # Pre-event runbook to confirm every control actually works
 │   └── ecosystem-architecture.md # How this repo, cei-labs-engine, and CEI-Labs-Wargames fit together
 ├── config/
@@ -86,8 +86,8 @@ DNS-lockdown, traffic-shaping, and QoS configuration.
    [`docs/ecosystem-architecture.md`](docs/ecosystem-architecture.md) §3).
 5. Before opening registration, run every check in
    [`docs/verification-checklist.md`](docs/verification-checklist.md) —
-   isolation, DNS interception, DoT/DoH blocking, limiters, QoS, and Docker
-   hardening all need to be confirmed live, not assumed from config.
+   isolation, DNS interception, DoT/DoH/DoQ blocking, limiters, QoS, and
+   Docker hardening all need to be confirmed live, not assumed from config.
 
 ## License
 
