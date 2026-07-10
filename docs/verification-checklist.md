@@ -44,6 +44,12 @@ the underlying rule order is correct in general.
 
 ## 1. VLAN & DHCP sanity
 
+- [ ] Every broadcast SSID (Player, Staff, any AP management SSID)
+      requires a passphrase to associate — a Wi-Fi scanner app or your
+      OS's network list shows a lock icon / "Secured" on all of them,
+      none show "Open"/unsecured. Confirm the security type is
+      WPA2-Personal or WPA3-Personal specifically (check the AP admin
+      UI), not WEP or WPA/TKIP.
 - [ ] Client on VLAN 30 Wi-Fi receives an address inside `10.10.32.0/22`
       with gateway `10.10.32.1` (`ipconfig`/`ip a`).
 - [ ] Client on VLAN 40 wired port receives an address inside

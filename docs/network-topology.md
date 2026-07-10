@@ -53,6 +53,17 @@ Notes:
   out its own IPv6 router advertisements and auto-configuring peers onto
   a network segment this repo's firewall policy was never written to
   cover, before that traffic ever reaches pfSense/OPNsense at all.
+- **Every SSID must use WPA2-Personal or WPA3-Personal — no open/
+  unauthenticated SSID on any VLAN, including staff/management.** This
+  was previously unstated anywhere in this repo. WPA3-Personal is
+  preferred where every expected client device supports it (WPA3 closes
+  several passive-capture weaknesses WPA2-Personal has); fall back to
+  WPA2-Personal/AES(CCMP) — never WEP or WPA/TKIP — if broad device
+  compatibility is a concern for a public player-facing SSID.
+  Player-facing SSIDs (VLAN 30) should use a passphrase distributed at
+  check-in, rotated per event; Staff (VLAN 50) and any AP management
+  SSID (VLAN 10) should use a separate, non-public passphrase not
+  shared with players.
 - Ports 6–9 are unassigned by this layout (Ports 1–5 are the uplink/AP
   trunks, 10 is the Docker host, 11–24 are wired stations). Leave them
   disabled/spare rather than defaulting them into an access VLAN, so an
