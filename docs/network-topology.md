@@ -45,6 +45,14 @@ Notes:
 - **Ports 11–24 must have switch-level Port Isolation (a.k.a. Protected
   Ports / Private VLAN Edge) enabled — this is not optional, see the
   callout below.**
+- **Enable RA-Guard (Router Advertisement Guard) on every player-facing
+  port** (11–24, and the AP trunk ports 2–5) if the switch supports it.
+  This network runs IPv6 disabled end-to-end (see
+  [`security-qos-policy.md`](security-qos-policy.md) §0) — RA-Guard stops
+  a rogue or misconfigured device plugged into a player port from handing
+  out its own IPv6 router advertisements and auto-configuring peers onto
+  a network segment this repo's firewall policy was never written to
+  cover, before that traffic ever reaches pfSense/OPNsense at all.
 - Ports 6–9 are unassigned by this layout (Ports 1–5 are the uplink/AP
   trunks, 10 is the Docker host, 11–24 are wired stations). Leave them
   disabled/spare rather than defaulting them into an access VLAN, so an

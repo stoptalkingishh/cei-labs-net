@@ -8,6 +8,59 @@ authoritative step-by-step for both platforms.
 
 ---
 
+## 0. IPv6 Lockdown (Prerequisite — Do This First)
+
+Every other section in this document is written and enforced in **IPv4
+terms only** — the DNS interception NAT rule, the peer-isolation block,
+the App-ID/Zenarmor throttling, all of it. None of that has any effect
+on IPv6 traffic. Modern operating systems and access points commonly
+enable IPv6 by default (link-local addressing at minimum, often full
+SLAAC auto-configuration from a router advertisement), which means a
+player device on an IPv6-enabled network segment could plausibly reach
+peers, bypass the DNS redirect, or otherwise sidestep the entire policy
+below over a protocol this repo never mentioned until now.
+
+Nothing on this network actually needs IPv6 — CTFd, the orchestrator,
+and every target image in the reference `cei-labs-engine`/
+`CEI-Labs-Wargames` deployments are IPv4-only. The fix is to disable and
+block IPv6 outright rather than build and maintain a parallel IPv6
+mirror of every rule in this document — half a firewall policy, kept in
+sync by hand across two protocol stacks, is worse than committing to one
+protocol and actually blocking the other.
+
+**Three layers, all required — each catches what the others can miss:**
+
+1. **System-level disable.** pfSense: **System → Advanced → Networking**,
+   uncheck **"Allow IPv6"**. OPNsense: **System → Settings → General**,
+   uncheck **"IPv6 Allow"**. This is the primary control — with it off,
+   the box won't process IPv6 traffic at all.
+2. **Per-interface: IPv6 Configuration Type = None**, set individually
+   on every VLAN interface (**Interfaces → [VLAN]**, "IPv6 Configuration
+   Type" dropdown). The system-level toggle above is global; this stops
+   pfSense/OPNsense itself from participating in IPv6 (RA, DHCPv6
+   relay) on a *specific* interface even if someone re-enables the
+   global toggle later without revisiting every interface.
+3. **Explicit filter block**, `vlan30_player`/`vlan40_player`, protocol
+   `IPv6`, source/destination any, ordered near the top of each
+   interface's rule set. Pure defense-in-depth: if layers 1–2 are ever
+   disabled or misconfigured, this still drops IPv6 packets outright
+   rather than silently letting them through unfiltered (which is
+   strictly worse than never having addressed IPv6 at all, since it
+   would look like the network has an isolation policy when it doesn't).
+
+XML reference: [`config/pfsense/disable-ipv6.xml`](../config/pfsense/disable-ipv6.xml)
+(covers layers 1 and 3; layer 2 is a per-interface GUI setting not
+expressible as a filter-rule XML fragment — set it manually on each
+VLAN interface).
+
+**This does not replace switch-level RA-Guard** (see
+[`network-topology.md`](network-topology.md) §1) — RA-Guard stops a
+rogue router advertisement from a device plugged into a player port
+before it ever reaches pfSense/OPNsense at all, a distinct Layer-2
+concern this Layer-3 control can't address on its own.
+
+---
+
 ## 1. Foolproof DNS Interception (NAT Port Forward)
 
 Goal: players cannot bypass the resolver by hardcoding `8.8.8.8` / `1.1.1.1`

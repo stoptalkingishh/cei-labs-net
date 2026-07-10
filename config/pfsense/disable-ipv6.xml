@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<!--
+  cei-labs-net :: IPv6 lockdown fragment
+
+  MERGE FRAGMENT — see dns-redirect-nat.xml header for import notes.
+
+  Security audit finding: this repo's entire firewall/DNS-interception/
+  isolation policy is written and enforced in IPv4 terms only. Nothing
+  disables or blocks IPv6, and modern OSes/APs commonly enable IPv6
+  (link-local at minimum, often full SLAAC) by default. Since nothing on
+  this network actually needs IPv6 (CTFd, the orchestrator, and every
+  target image in the reference deployments are IPv4-only), the fix is
+  to disable and block it outright rather than duplicate every IPv4 rule
+  in IPv6 form — half a firewall policy is worse than none, since it
+  creates a false sense of completeness.
+
+  Three layers, all required (see security-qos-policy.md §0 for why each
+  one exists independently rather than relying on just one):
+    1. System-level: turn IPv6 off entirely (below, <system> section).
+    2. Per-interface: IPv6 Configuration Type = None on every VLAN
+       interface (not expressible in this XML fragment format the same
+       way as <filter> rules — see security-qos-policy.md §0 for the
+       exact GUI steps, one per interface).
+    3. Explicit filter block, defense-in-depth in case IPv6 is ever
+       re-enabled globally without someone updating every interface
+       config to match (<filter> section below).
+
+  This does NOT replace switch-level RA-Guard (network-topology.md §1) —
+  that stops a rogue router advertisement from a device plugged into a
+  player port before it ever reaches pfSense/OPNsense at all, which is
+  a distinct L2 concern this L3 fragment can't address.
+-->
+<pfsense>
+  <system>
+    <!-- pfSense: System > Advanced > Networking > "Allow IPv6", uncheck.
+         OPNsense: System > Settings > General > "IPv6 Allow", uncheck. -->
+    <ipv6allow>0</ipv6allow>
+  </system>
+
+  <filter>
+    <rule>
+      <type>block</type>
+      <interface>vlan30_player</interface>
+      <ipprotocol>inet6</ipprotocol>
+      <protocol>any</protocol>
+      <source><any/></source>
+      <destination><any/></destination>
+      <descr>Block all IPv6, defense-in-depth behind the system-level disable, VLAN30 (Player Wi-Fi)</descr>
+    </rule>
+    <rule>
+      <type>block</type>
+      <interface>vlan40_player</interface>
+      <ipprotocol>inet6</ipprotocol>
+      <protocol>any</protocol>
+      <source><any/></source>
+      <destination><any/></destination>
+      <descr>Block all IPv6, defense-in-depth behind the system-level disable, VLAN40 (Player Wired)</descr>
+    </rule>
+  </filter>
+</pfsense>
