@@ -201,9 +201,55 @@ challenge ports, SSH) rides the priority queues untouched.
 3. DNS NAT redirect (→ `127.0.0.1:53`) → tag `qHigh`
 4. ICMP → tag `qHigh`
 5. Traffic to `10.10.20.0/24` (Scoreboard/CTF Infra) → tag `qHigh`
-6. App-ID/Zenarmor match (BitTorrent/Steam/Netflix/YouTube/Updates) → `Heavy_Traffic_Throttle`
-7. SSH (22), HTTP/HTTPS to VLAN 20 challenge ports → tag `qInteractive`
-8. Default allow to WAN → tag `qDefault`, in/out through `Player_Upload` / `Player_Download` limiters
+6. Traffic to `Wargame_Reference_Sites` alias (§4.4) → tag `qInteractive`
+7. App-ID/Zenarmor match (BitTorrent/Steam/Netflix/YouTube/Updates) → `Heavy_Traffic_Throttle`
+8. SSH (22), HTTP/HTTPS to VLAN 20 challenge ports → tag `qInteractive`
+9. Default allow to WAN → tag `qDefault`, in/out through `Player_Upload` / `Player_Download` limiters
+
+Rule 6 must sit **above** rule 7 — the whole point of the dedicated
+alias rule is to guarantee these specific hosts land in `qInteractive`
+before the App-ID/Zenarmor bulk-signature match ever gets a chance to
+reclassify them into `Heavy_Traffic_Throttle`.
 
 XML reference: [`config/pfsense/qos-queues.xml`](../config/pfsense/qos-queues.xml),
 notes: [`config/opnsense/zenarmor-shaper-notes.md`](../config/opnsense/zenarmor-shaper-notes.md)
+
+### 4.4 Guaranteed-Reachable Reference Sites (Wargame Allowlist)
+
+Player VLANs already default-allow to WAN (§ rule 9 above) — general
+internet access already works, this section does **not** restrict it
+further. Its purpose is narrower and additive: the self-hosted wargames
+content (`CEI-Labs-Wargames`, see
+[`docs/network-access.md`](https://github.com/stoptalkingishh/CEI-Labs-Wargames/blob/main/docs/network-access.md)
+in that repo) links a small, fixed set of external reference pages
+directly from challenge hints/descriptions — Wikipedia articles and a
+handful of technical references. Without an explicit rule, those hosts
+would fall through to the default WAN rule (§4.3's App-ID/Zenarmor
+match runs *before* the default-allow catch-all), which risks an
+overzealous DPI signature (e.g. a broad "Software Updates" or
+CDN-category match) throttling a page a participant is actively trying
+to read mid-challenge, to 256 Kbit/s, with no obvious cause from the
+player's side.
+
+**pfSense/OPNsense: Firewall → Aliases → New Alias**
+
+| Field | Value |
+| :--- | :--- |
+| Name | `Wargame_Reference_Sites` |
+| Type | `Host(s)` (FQDN entries — pfSense/OPNsense periodically re-resolve these via DNS on their own, no manual IP maintenance needed) |
+| Hosts | `en.wikipedia.org`, `git-scm.com`, `help.ubuntu.com`, `jwiegley.github.io`, `linux.die.net` |
+
+Add a **pass** rule on `vlan30_player`/`vlan40_player`, matching TCP
+80/443 to this alias, tagged `qInteractive`, placed above the App-ID/
+Zenarmor match rule (rule ordering item 6, above).
+
+XML reference: [`config/pfsense/wargame-reference-allowlist.xml`](../config/pfsense/wargame-reference-allowlist.xml)
+
+**Keeping this list current:** the domain list is generated from the
+"Helpful reading" links embedded in `CEI-Labs-Wargames`' challenge
+build scripts (`scripts/build_bandit.py`, `build_krypton.py`,
+`build_natas.py`). See that repo's `docs/network-access.md` for the
+audit command and the per-domain justification. Whenever a wargame
+content update adds a new external reference link, both this alias and
+that doc need the same addition — treat `docs/network-access.md` as the
+source of truth, this alias as its network-side mirror.

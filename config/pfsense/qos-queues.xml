@@ -41,14 +41,16 @@
       3. pass  udp/tcp 53 -> 127.0.0.1:53          queue=qHigh   (post DNS-NAT redirect)
       4. pass  icmp                                queue=qHigh
       5. pass  any -> 10.10.20.0/24                queue=qHigh   (Scoreboard/CTF Infra)
-      6. pass  <AppID/Zenarmor match alias>         limiter=Heavy_Traffic_Throttle
+      6. pass  tcp 80,443 -> Wargame_Reference_Sites queue=qInteractive
+         (must sit ABOVE rule 7 — see wargame-reference-allowlist.xml)
+      7. pass  <AppID/Zenarmor match alias>         limiter=Heavy_Traffic_Throttle
          (BitTorrent, Steam, Netflix, YouTube, Windows/OS Update signatures)
-      7. pass  tcp/22                               queue=qInteractive
+      8. pass  tcp/22                               queue=qInteractive
          pass  any -> 10.10.20.0/24:<challenge-ports> queue=qInteractive
          pass  tcp -> 10.10.20.0/24:30000-32767     queue=qInteractive
          (cei-labs-engine's orchestrator SSH/analyst-workspace ports —
          live-confirmed range, see docs/network-topology.md)
-      8. pass  any -> any                           queue=qDefault
+      9. pass  any -> any                           queue=qDefault
          in-pipe=Player_Upload  out-pipe=Player_Download
   -->
   <filter>
@@ -81,6 +83,18 @@
       <destination><network>10.10.20.0/24</network></destination>
       <defaultqueue>qHigh</defaultqueue>
       <descr>Scoreboard/CTF Infra (VLAN20) -> qHigh</descr>
+    </rule>
+    <rule>
+      <type>pass</type>
+      <interface>vlan30_player</interface>
+      <protocol>tcp</protocol>
+      <source><any/></source>
+      <destination>
+        <address>Wargame_Reference_Sites</address>
+        <port>80,443</port>
+      </destination>
+      <defaultqueue>qInteractive</defaultqueue>
+      <descr>Wargame reference sites -> qInteractive (see wargame-reference-allowlist.xml)</descr>
     </rule>
     <rule>
       <type>pass</type>
@@ -143,6 +157,18 @@
       <destination><network>10.10.20.0/24</network></destination>
       <defaultqueue>qHigh</defaultqueue>
       <descr>Scoreboard/CTF Infra (VLAN20) -> qHigh</descr>
+    </rule>
+    <rule>
+      <type>pass</type>
+      <interface>vlan40_player</interface>
+      <protocol>tcp</protocol>
+      <source><any/></source>
+      <destination>
+        <address>Wargame_Reference_Sites</address>
+        <port>80,443</port>
+      </destination>
+      <defaultqueue>qInteractive</defaultqueue>
+      <descr>Wargame reference sites -> qInteractive (see wargame-reference-allowlist.xml)</descr>
     </rule>
     <rule>
       <type>pass</type>
