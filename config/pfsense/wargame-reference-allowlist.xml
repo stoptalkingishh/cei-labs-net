@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<!--
+  cei-labs-net :: Wargame reference-site guaranteed-reachable alias
+
+  MERGE FRAGMENT — see dns-redirect-nat.xml header for import notes.
+
+  Player VLANs already default-allow to WAN (post-shaper/QoS) — this
+  fragment does NOT change reachability. Its purpose is narrower: the
+  self-hosted wargames content (see the CEI-Labs-Wargames repo,
+  docs/network-access.md) points participants at a small, fixed set of
+  external reference pages (Wikipedia articles, git-scm.com, etc.) from
+  inside challenge hints/descriptions. Those domains must never be
+  silently caught by the App-ID/Zenarmor bulk-traffic signatures (e.g. a
+  "Software Updates" or CDN-adjacent category match) or any future
+  WAN-tightening pass — this fragment creates an explicit Hosts alias
+  and a pass rule ordered ABOVE the App-ID/Zenarmor match rule (see
+  qos-queues.xml's rule-ordering comment, item 6) so traffic to these
+  specific hosts always lands in qInteractive, never
+  Heavy_Traffic_Throttle.
+
+  pfSense/OPNsense "Host(s)" alias type periodically re-resolves FQDN
+  entries via DNS on its own — no manual IP maintenance needed as these
+  sites' hosting changes over time.
+
+  Keep this list in sync with CEI-Labs-Wargames' docs/network-access.md
+  (which is itself generated from the EXTRA_INFO reading-link dicts in
+  scripts/build_bandit.py, build_krypton.py, build_natas.py) — see that
+  doc for the audit command and the per-domain "why."
+-->
+<pfsense>
+  <aliases>
+    <alias>
+      <name>Wargame_Reference_Sites</name>
+      <type>host</type>
+      <address>
+        en.wikipedia.org
+        git-scm.com
+        help.ubuntu.com
+        jwiegley.github.io
+        linux.die.net
+      </address>
+      <descr>External reference pages linked from wargame challenge hints/descriptions — must never be miscategorized by App-ID/Zenarmor throttling</descr>
+    </alias>
+  </aliases>
+
+  <filter>
+    <rule>
+      <type>pass</type>
+      <interface>vlan30_player</interface>
+      <protocol>tcp</protocol>
+      <source><any/></source>
+      <destination>
+        <address>Wargame_Reference_Sites</address>
+        <port>80,443</port>
+      </destination>
+      <defaultqueue>qInteractive</defaultqueue>
+      <descr>Wargame reference sites -> qInteractive (guaranteed, never App-ID throttled)</descr>
+    </rule>
+    <rule>
+      <type>pass</type>
+      <interface>vlan40_player</interface>
+      <protocol>tcp</protocol>
+      <source><any/></source>
+      <destination>
+        <address>Wargame_Reference_Sites</address>
+        <port>80,443</port>
+      </destination>
+      <defaultqueue>qInteractive</defaultqueue>
+      <descr>Wargame reference sites -> qInteractive (guaranteed, never App-ID throttled)</descr>
+    </rule>
+  </filter>
+</pfsense>
