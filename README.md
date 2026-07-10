@@ -34,6 +34,7 @@ cei-labs-net/
 ├── docs/
 │   ├── network-topology.md      # Physical wiring, VLAN/DHCP map, router-on-a-stick design
 │   ├── security-qos-policy.md   # DNS interception, DoH/DoT/DoQ blocking, limiters, QoS queues
+│   ├── firewall-rule-order.md   # Master cross-fragment apply order -- read before building any of the above
 │   ├── verification-checklist.md # Pre-event runbook to confirm every control actually works
 │   └── ecosystem-architecture.md # How this repo, cei-labs-engine, and CEI-Labs-Wargames fit together
 ├── config/
@@ -74,7 +75,12 @@ DNS-lockdown, traffic-shaping, and QoS configuration.
    VLANs 10/20/30/40/50 on the core switch and APs.
 3. Apply the firewall/NAT/limiter rules in
    [`docs/security-qos-policy.md`](docs/security-qos-policy.md) (reference
-   fragments live under `config/pfsense/` and `config/opnsense/`).
+   fragments live under `config/pfsense/` and `config/opnsense/`) —
+   **follow [`docs/firewall-rule-order.md`](docs/firewall-rule-order.md)
+   for the order to actually build these in**; each section in
+   `security-qos-policy.md` documents one control in isolation, and
+   applying them out of order can silently produce a configuration that
+   looks complete but doesn't enforce what it claims to.
 4. Stand up the CTF Infrastructure host(s) on VLAN 20 (`docker swarm init`,
    or join via `cei-labs-engine`'s Ansible playbook for multi-host) and
    deploy [`cei-labs-engine`](https://github.com/stoptalkingishh/cei-labs-engine)'s

@@ -10,6 +10,15 @@ traffic. Run this full pass at least once during setup, and re-run the
 Use a single throwaway test laptop/VM connected to Player Wi-Fi (VLAN 30)
 and, separately, a wired hardline port (VLAN 40) for each check below.
 
+Before running any check below, confirm the actual rule order in
+**Firewall → Rules** matches
+[`firewall-rule-order.md`](firewall-rule-order.md) — a control that
+tests as "working" in isolation can still be silently defeated by a
+misordered catch-all rule elsewhere on the same interface (see that
+document's "Verified failure mode"). A single passing check below
+proves that control worked *this time, in this configuration*, not that
+the underlying rule order is correct in general.
+
 ---
 
 ## 0. IPv6 lockdown
