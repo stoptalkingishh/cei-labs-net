@@ -6,6 +6,16 @@ throttling on **pfSense** (Unbound + Limiters + Snort/OpenAppID) or
 live under `config/pfsense/` and `config/opnsense/`; this doc is the
 authoritative step-by-step for both platforms.
 
+**Applying this for the first time?** Each section below documents one
+control in isolation — read
+[`firewall-rule-order.md`](firewall-rule-order.md) first for the actual
+cross-section apply order. Rule evaluation is first-match-wins, and
+nothing in any single section enforces where its rule lands relative to
+every other section's; importing fragments in the wrong overall
+sequence has been confirmed to produce a configuration that looks
+complete but silently doesn't enforce what it claims to (see that
+document's "Verified failure mode").
+
 ---
 
 ## 1. Foolproof DNS Interception (NAT Port Forward)
