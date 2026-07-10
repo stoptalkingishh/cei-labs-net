@@ -42,11 +42,33 @@ Notes:
   isolation / peer-to-peer blocking) enabled at the radio level. This stops
   same-SSID players from reaching each other directly over the air, which
   the switch/firewall ACLs cannot see or stop.
+- **Ports 11–24 must have switch-level Port Isolation (a.k.a. Protected
+  Ports / Private VLAN Edge) enabled — this is not optional, see the
+  callout below.**
 - Ports 6–9 are unassigned by this layout (Ports 1–5 are the uplink/AP
   trunks, 10 is the Docker host, 11–24 are wired stations). Leave them
   disabled/spare rather than defaulting them into an access VLAN, so an
   unauthorized device plugged into an open port doesn't land on a live
   network.
+
+> **Why wired stations need switch-level isolation, not just a firewall
+> rule:** two hosts on the same VLAN, on the same switch, talking to each
+> other is *ordinary local Layer-2 switching* — that traffic never reaches
+> pfSense/OPNsense, so a firewall rule alone cannot see or block it. (This
+> is exactly why Wi-Fi needs AP-side Client Isolation instead of relying on
+> the firewall — the wired side has the identical problem and needs the
+> wired equivalent.) **Port Isolation** on the switch (sometimes called
+> Protected Ports or Private VLAN Edge/PVE) restricts each isolated port
+> (11–24) to only forward traffic to designated "uplink" port(s) — Port 1
+> here — never to another isolated port directly. That forces
+> station-to-station traffic up to pfSense/OPNsense as an actual routed
+> hairpin (same subnet, in and back out the same interface), which is what
+> finally gives the firewall's `block VLAN40net → VLAN40net` rule (§3
+> below, [`security-qos-policy.md`](security-qos-policy.md) §5) something
+> real to act on. Enable this on whichever switch you use — for the
+> TP-Link JetStream reference hardware in the main README, this is
+> **Switching → Port Isolation**, with the "Uplink Port" set to Port 1 for
+> every port in 11–24.
 
 ## 2. VLAN & DHCP Subnet Map
 
@@ -82,11 +104,24 @@ interface (details and NAT/limiter specifics in
 | 50 (Staff) | VLAN 10, 20, 30, 40, WAN | — |
 | 10 (Management) | Self only from player/staff VLANs (block all inbound except from 50) | Player VLANs (30/40) fully blocked from reaching VLAN 10 |
 
-Player-to-player isolation is enforced **twice**: once at the AP (Client
-Isolation, RF-level) for Wi-Fi, and once at the firewall via an explicit
-"block VLAN30 net → VLAN30 net" / "block VLAN40 net → VLAN40 net" rule
-above the general allow rules, so a player who ARP-spoofs or plugs a switch
-into their hardline port still can't reach a neighbor.
+Player-to-player isolation is enforced **twice per medium**, and the two
+layers are different for Wi-Fi vs. wired:
+
+- **Wi-Fi (VLAN 30):** AP-side Client Isolation (RF-level, stops traffic
+  before it ever reaches the switch) plus the firewall's
+  `block VLAN30net → VLAN30net` rule as defense-in-depth for any traffic
+  that does make it to pfSense/OPNsense.
+- **Wired (VLAN 40):** switch-level Port Isolation on ports 11–24 (§1
+  above — this is the layer that actually stops ordinary same-switch
+  traffic, which never reaches the firewall on its own) plus the
+  firewall's `block VLAN40net → VLAN40net` rule, which only gets a
+  chance to act because Port Isolation forces that traffic to hairpin
+  through the router in the first place.
+
+A player who plugs a switch into their own hardline port and connects a
+second device to it still can't reach a neighbor on a different port,
+since Port Isolation is enforced per-port on the core switch regardless
+of what's plugged into an individual isolated port.
 
 ### "Challenge ports only" on VLAN 20 — the actual port list
 

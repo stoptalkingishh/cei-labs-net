@@ -56,7 +56,7 @@ profile:
 | :--- | :--- | :--- |
 | **Core Router / Firewall** | Refurbished SFF Desktop (e.g., Dell OptiPlex / HP ProDesk) | Intel Core i3/i5, 8GB RAM, 120GB SSD. Must install **pfSense** or **OPNsense** (Open Source). |
 | **Network Interface Card** | PCIe Multi-Port Intel Gigabit NIC | **Critical:** Intel chipsets (e.g., i350-T4) to process high packet streams in hardware rather than overloading the host CPU. |
-| **Core Switch** | 24-Port Managed Layer 2 Gigabit Switch | Must support **802.1Q VLAN tagging** and Access Control Lists (ACLs). (e.g., TP-Link JetStream series). |
+| **Core Switch** | 24-Port Managed Layer 2 Gigabit Switch | Must support **802.1Q VLAN tagging**, Access Control Lists (ACLs), and per-port **Port Isolation** (a.k.a. Protected Ports / Private VLAN Edge) — required on the wired player ports, VLAN tagging alone is not sufficient for peer isolation. (e.g., TP-Link JetStream series). |
 | **Wireless Access Points** | 3 to 4 Multi-Node Business APs | **Minimum Wi-Fi 6 (802.11ax)** capable of broadcasting multiple SSIDs mapped to VLANs with **Client Isolation** enabled. |
 
 See [`docs/network-topology.md`](docs/network-topology.md) for the full

@@ -196,7 +196,10 @@ challenge ports, SSH) rides the priority queues untouched.
 
 ### Rule ordering (top to bottom, per player VLAN)
 
-1. Block VLAN30↔VLAN30 / VLAN40↔VLAN40 (player isolation — see topology doc)
+1. Block VLAN30↔VLAN30 / VLAN40↔VLAN40 (player isolation — §5 below;
+   VLAN40 also requires switch-level Port Isolation, see
+   `network-topology.md` §1 — this rule alone doesn't stop same-switch
+   wired peers)
 2. Block outbound TCP/853 (DoT)
 3. DNS NAT redirect (→ `127.0.0.1:53`) → tag `qHigh`
 4. ICMP → tag `qHigh`
@@ -253,3 +256,62 @@ audit command and the per-domain justification. Whenever a wargame
 content update adds a new external reference link, both this alias and
 that doc need the same addition — treat `docs/network-access.md` as the
 source of truth, this alias as its network-side mirror.
+
+---
+
+## 5. Player Peer-Isolation (Rule Ordering Item 1)
+
+This is rule 1 of 9 in the ordering list above and is meant to be the
+*first* filter rule evaluated on both player VLANs — but on its own,
+the filter rule below is **not sufficient for VLAN 40 (wired)**. Two
+hosts on the same VLAN, on the same switch, are ordinarily handled by
+local Layer-2 switching and never reach pfSense/OPNsense at all — a
+firewall rule cannot see or block traffic it never receives. (Earlier
+revisions of this repo's docs stated this filter rule alone "confirms"
+wired isolation — that was incorrect; see
+`docs/network-topology.md` §1 and §3 for the corrected explanation and
+the required switch-side configuration.)
+
+**Two layers are required, not one:**
+
+1. **Switch-level Port Isolation** (a.k.a. Protected Ports / Private
+   VLAN Edge) on the core switch's ports 11–24, with Port 1 (the
+   pfSense/OPNsense uplink) as the designated "uplink"/permitted port
+   for every isolated port. This is what forces wired peer-to-peer
+   traffic to actually hairpin through the router instead of being
+   locally switched — without it, the filter rule below never sees
+   that traffic at all. See `docs/network-topology.md` §1 for the
+   TP-Link JetStream-specific menu path (**Switching → Port
+   Isolation**); the equivalent feature exists on effectively every
+   managed switch capable of VLANs, under one of these three names.
+2. **The firewall block rule itself** — pass/block on `vlan30_player`
+   and `vlan40_player`, source and destination both the player VLAN's
+   own subnet, ordered first.
+
+**pfSense/OPNsense: Firewall → Rules**, per player VLAN interface, as
+the top-most rule:
+
+| Field | Value |
+| :--- | :--- |
+| Action | Block |
+| Protocol | any |
+| Source | VLAN's own subnet (e.g. `10.10.40.0/24` for `vlan40_player`) |
+| Destination | Same subnet |
+| Description | `Block <VLANname> peer-to-peer` |
+
+For Wi-Fi (VLAN 30), AP-side Client Isolation (`network-topology.md`
+§1) is the primary control — it stops same-SSID peer traffic before it
+ever reaches the switch — and this filter rule is defense-in-depth
+behind it, the same relationship the wired side has once switch-level
+Port Isolation is in place.
+
+XML reference: [`config/pfsense/player-peer-isolation.xml`](../config/pfsense/player-peer-isolation.xml)
+
+**Verification:** `docs/verification-checklist.md` §2 tests this with
+two clients per VLAN attempting to ping each other — but a passing
+result only proves isolation is *working*, not *which* layer is doing
+the work. If you ever need to confirm the switch-side Port Isolation
+specifically (e.g. after replacing switch hardware), temporarily
+disable it alone and re-run the same wired ping test — it should now
+succeed, confirming the firewall rule alone was never actually reaching
+that traffic before.

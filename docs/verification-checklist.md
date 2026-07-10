@@ -27,8 +27,19 @@ and, separately, a wired hardline port (VLAN 40) for each check below.
 - [ ] Two test clients on VLAN 30 Wi-Fi (same SSID) **cannot** ping or
       reach each other (`ping <peer-ip>` times out) — confirms AP Client
       Isolation.
-- [ ] Two test clients on VLAN 40 wired ports **cannot** ping each other —
-      confirms the firewall block rule (switch alone won't stop this).
+- [ ] Switch admin UI shows **Port Isolation** (a.k.a. Protected Ports /
+      Private VLAN Edge) enabled on every port in 11–24, with Port 1 set
+      as the permitted uplink — check this **before** the ping test
+      below; it's the layer that actually matters, the firewall rule is
+      backup (see `network-topology.md` §1's callout).
+- [ ] Two test clients on VLAN 40 wired ports **cannot** ping each other
+      — this is switch-level Port Isolation doing the real work; the
+      firewall's `block VLAN40net → VLAN40net` rule only ever sees this
+      traffic *because* Port Isolation forces it up to the router first
+      (a firewall rule alone cannot stop ordinary same-switch traffic —
+      confirm this isn't accidentally passing by disabling Port
+      Isolation alone and re-testing; the ping should then succeed,
+      proving the firewall rule was never actually reaching it).
 - [ ] VLAN 30/40 client **cannot** reach `10.10.10.0/24` (Management) or
       `10.10.50.0/24` (Staff) — `ping`/`nmap -p 22,443` should be fully
       blocked.
