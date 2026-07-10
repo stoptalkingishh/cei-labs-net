@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<!--
+  cei-labs-net :: Player peer-isolation fragment (rule-ordering item 1)
+
+  MERGE FRAGMENT — see dns-redirect-nat.xml header for import notes.
+
+  These are the FIRST filter rules on each player VLAN interface — must
+  be ordered ABOVE every other rule in qos-queues.xml, block-dot-doh.xml,
+  and wargame-reference-allowlist.xml (all of that traffic is still
+  same-VLAN-to-outside-WAN/VLAN20, never same-VLAN-to-same-VLAN, so
+  ordering relative to THOSE rules doesn't matter for correctness here —
+  what matters is these rules being first, not last, so isolated peer
+  traffic never falls through to a later pass rule first).
+
+  IMPORTANT — this rule alone is NOT sufficient. Two hosts on the same
+  VLAN, on the same switch, talking to each other is ordinary local
+  Layer-2 switching that never reaches this firewall at all — these
+  <rule> elements only see traffic that the CORE SWITCH has already been
+  configured to force up to pfSense/OPNsense via switch-level Port
+  Isolation (a.k.a. Protected Ports / Private VLAN Edge) on ports 11-24.
+  See docs/network-topology.md §1's callout for the switch-side
+  configuration this depends on — for Wi-Fi (VLAN 30), the equivalent
+  first line of defense is AP-side Client Isolation, which stops
+  same-SSID peer traffic before it reaches the switch at all; this filter
+  rule is defense-in-depth there. For Wired (VLAN 40), this filter rule
+  is the second of two REQUIRED layers, not defense-in-depth — without
+  switch-level Port Isolation, wired peers can reach each other and this
+  rule will simply never be evaluated for that traffic.
+-->
+<pfsense>
+  <filter>
+    <rule>
+      <type>block</type>
+      <interface>vlan30_player</interface>
+      <protocol>any</protocol>
+      <source><network>10.10.32.0/22</network></source>
+      <destination><network>10.10.32.0/22</network></destination>
+      <descr>Block VLAN30 (Player Wi-Fi) peer-to-peer -- defense-in-depth behind AP Client Isolation</descr>
+    </rule>
+    <rule>
+      <type>block</type>
+      <interface>vlan40_player</interface>
+      <protocol>any</protocol>
+      <source><network>10.10.40.0/24</network></source>
+      <destination><network>10.10.40.0/24</network></destination>
+      <descr>Block VLAN40 (Player Wired) peer-to-peer -- REQUIRES switch-level Port Isolation on ports 11-24 to actually see this traffic</descr>
+    </rule>
+  </filter>
+</pfsense>
