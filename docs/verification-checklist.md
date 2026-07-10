@@ -12,6 +12,27 @@ and, separately, a wired hardline port (VLAN 40) for each check below.
 
 ---
 
+## 0. IPv6 lockdown
+
+- [ ] `ipconfig /all` (Windows) or `ip -6 addr` (Linux/macOS) on a VLAN
+      30/40 client shows **no IPv6 address at all** — not even a
+      link-local (`fe80::...`) address obtained via router
+      advertisement from pfSense/OPNsense itself (a link-local address
+      the OS assigned to itself with no router involved is expected and
+      fine; one that shows a non-`fe80` global/ULA prefix, or DNS
+      servers listed under an IPv6 adapter, means SLAAC/RA is active
+      somewhere and layer 2 of `security-qos-policy.md` §0 isn't
+      actually working).
+- [ ] `ping -6` (or `ping6`) to a known public IPv6 host (e.g.
+      `2606:4700:4700::1111`) from a VLAN 30/40 client **fails** —
+      confirms IPv6 is genuinely blocked/unreachable, not just
+      unconfigured on the client by coincidence.
+- [ ] If the core switch supports RA-Guard: confirm it's enabled on at
+      least one wired player port (11–24) via the switch admin UI —
+      full traffic-level RA-spoofing verification is optional (it's a
+      defense-in-depth layer behind the system-level IPv6 disable
+      above, not the primary control).
+
 ## 1. VLAN & DHCP sanity
 
 - [ ] Client on VLAN 30 Wi-Fi receives an address inside `10.10.32.0/22`
