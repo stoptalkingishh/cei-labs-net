@@ -1,7 +1,8 @@
 # Self-Hosted Wargames: Status (cei-labs-net)
 
-**Branch:** `docs/self-hosted-wargames-status-note` @ `cf69afc` (not merged
-to `main` @ `b30faa4`)
+**Status:** Merged to `main` (confirmed via `git merge-base --is-ancestor
+cf69afc main`). Originally written from `docs/self-hosted-wargames-status-
+note` @ `cf69afc` before that branch landed.
 **Related:** [`cei-labs-engine` status](../../cei-labs-engine/docs/self-hosted-wargames-status.md) · [`CEI-Labs-Wargames` status](../../CEI-Labs-Wargames/docs/self-hosted-wargames-status.md)
 
 ## What this is
@@ -43,14 +44,14 @@ language already covers this correctly.
 
 ## Known open items
 
-- Finding #7's "outbound reachability to OverTheWire" pre-event
-  connectivity check should stay in `verification-checklist.md` until the
-  self-hosted migration actually lands on `main` in the other two repos —
-  removing it now would be premature (the OTW-dependent version is still
-  what's on `main` today).
 - No changes needed to `config/pfsense/qos-queues.xml` or any other
   firewall/QoS config file — the conclusion above is documentation-only.
 
 ## Not done at all
 
-No PRs opened, nothing merged to `main`.
+Nothing — this is merged to `main` now (see the status note at the top).
+The migration has since landed on `main` in the other two repos as well,
+so the "outbound reachability to OverTheWire" pre-event check this doc
+originally said to keep until then has been removed from
+`verification-checklist.md` — nothing in this platform depends on OTW's
+infrastructure anymore.

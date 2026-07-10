@@ -119,14 +119,6 @@ the underlying rule order is correct in general.
       wildcard check above still passes — this proves the rebinding
       protection is blocking upstream-sourced private answers without
       breaking Unbound's own local-zone overrides.
-- [ ] Confirm outbound reachability to `*.labs.overthewire.org` (e.g.
-      `nc -zv bandit.labs.overthewire.org 2220`) from a VLAN 30/40 client —
-      if `CEI-Labs-Wargames`' Bandit/Krypton/Natas content is deployed,
-      two of the three curriculum tracks depend on this external service
-      being reachable, not on VLAN 20 at all (`ecosystem-architecture.md`
-      §7). A venue firewall or filtering proxy blocking non-standard SSH
-      ports would silently break these tracks.
-
 ## 4. DoT / DoH / DoQ bypass prevention
 
 - [ ] `openssl s_client -connect 1.1.1.1:853` from a player client fails to
