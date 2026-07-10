@@ -64,6 +64,14 @@ and, separately, a wired hardline port (VLAN 40) for each check below.
       first check and silently fail the second, breaking every
       orchestrator-launched challenge instance for players. See
       `ecosystem-architecture.md` §2.
+- [ ] DNS-rebinding protection (§1.1): from a VLAN 30/40 client, resolve
+      a domain you control (or a public rebinding-test domain) that's
+      configured to answer with a private RFC1918 address (e.g.
+      `10.10.10.1`) — the query should fail/return no answer, not the
+      private address. Immediately after, re-confirm the `${BASE_DOMAIN}`
+      wildcard check above still passes — this proves the rebinding
+      protection is blocking upstream-sourced private answers without
+      breaking Unbound's own local-zone overrides.
 - [ ] Confirm outbound reachability to `*.labs.overthewire.org` (e.g.
       `nc -zv bandit.labs.overthewire.org 2220`) from a VLAN 30/40 client —
       if `CEI-Labs-Wargames`' Bandit/Krypton/Natas content is deployed,

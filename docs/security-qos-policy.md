@@ -48,6 +48,41 @@ XML reference: [`config/pfsense/dns-redirect-nat.xml`](../config/pfsense/dns-red
 > only covers the scoreboard, not challenge instances. See
 > [`ecosystem-architecture.md`](ecosystem-architecture.md) §2 and §6.
 
+### 1.1 DNS-Rebinding Protection
+
+Forcing all DNS through one local Unbound instance (above) controls
+*where* players resolve names, but says nothing about *what answers*
+Unbound is willing to hand back. Without this setting, a player could
+register/control a public domain that resolves to an internal RFC1918
+address (e.g. `10.10.10.1`, pfSense's own management IP) — a classic
+DNS-rebinding attack, letting a browser-based script that "looks like"
+it's talking to an external site actually reach internal-only services
+the same-origin browser sandbox would otherwise never let it touch.
+Given this network already assumes an adversarial player population
+that's expected to run scanners and explore aggressively, this is worth
+closing rather than leaving implicit.
+
+**pfSense/OPNsense: Services → DNS Resolver/Unbound DNS → General
+Settings → Custom options**, add:
+
+```
+server:
+    private-address: 10.0.0.0/8
+    private-address: 172.16.0.0/12
+    private-address: 192.168.0.0/16
+```
+
+This tells Unbound to refuse any answer from an **upstream** query that
+resolves a public-looking domain to one of these private ranges. It
+does **not** affect the `*.${BASE_DOMAIN}` wildcard override above (or
+any other Unbound host override/local-zone entry) — those are answered
+directly from Unbound's own local data, never treated as an upstream
+response, so this setting cannot break `cei-labs-engine`'s own
+hostname-based routing. (IPv6 private-address ranges
+(`fd00::/8`, `fe80::/10`) are omitted here — a separate audit fix
+disables IPv6 network-wide, which makes them moot; add them back if
+IPv6 is ever deliberately re-enabled without that fix in place.)
+
 ---
 
 ## 2. Advanced Bypass Prevention (DoH / DoT)
