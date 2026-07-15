@@ -44,6 +44,17 @@ the underlying rule order is correct in general.
 
 ## 1. VLAN & DHCP sanity
 
+- [ ] Every AP is confirmed as SonicWall SonicPoint ACe model APL26-0AE;
+      its exact stable OpenWrt release, firmware filename, SHA-256 checksum,
+      management IP, switch port, PoE source, radio MACs, and physical
+      location are recorded per
+      [`access-point-sonicpoint-ace.md`](access-point-sonicpoint-ace.md).
+- [ ] Both expected APs are present and powered on ports 2 and 3. Ports 4 and
+      5 are documented as spare/expansion ports, and the operator knows the
+      wired-overflow or admission plan if one AP fails.
+- [ ] Each AP is bridge-only: DHCP/DNS/NAT/UPnP/WAN routing are disabled,
+      and AP administration is reachable only through VLAN 10 from an
+      authorized management/staff source.
 - [ ] Every broadcast SSID (Player, Staff, any AP management SSID)
       requires a passphrase to associate — a Wi-Fi scanner app or your
       OS's network list shows a lock icon / "Secured" on all of them,
@@ -63,6 +74,11 @@ the underlying rule order is correct in general.
 - [ ] Two test clients on VLAN 30 Wi-Fi (same SSID) **cannot** ping or
       reach each other (`ping <peer-ip>` times out) — confirms AP Client
       Isolation.
+- [ ] Put one player client on AP-1 and another on AP-2. They cannot resolve,
+      ping, or connect to one another. Switch ports 2–5 are isolated from
+      each other for tagged VLAN 30 traffic while each can reach port 1.
+      If the switch cannot enforce this, verify the documented per-AP VLAN
+      fallback instead.
 - [ ] Switch admin UI shows **Port Isolation** (a.k.a. Protected Ports /
       Private VLAN Edge) enabled on every port in 11–24, with Port 1 set
       as the permitted uplink — check this **before** the ping test
@@ -234,7 +250,7 @@ Run this 10-minute pass after APs/switch are physically placed and powered
 in their final event positions, since RF conditions and cable runs can
 surface issues not present during bench testing:
 
-1. Connect to each of the 3–4 Player Wi-Fi APs individually (not just the
+1. Connect to both deployed Player Wi-Fi APs individually (not just the
    nearest one) and repeat §1 (DHCP) and §2 (isolation) once per AP.
 2. Run one DNS interception check (§3) and one bandwidth check (§5) from
    the wired hardline row.

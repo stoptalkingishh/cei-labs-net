@@ -36,6 +36,7 @@ cei-labs-net/
 │   ├── security-qos-policy.md   # DNS interception, DoH/DoT/DoQ blocking, limiters, QoS queues
 │   ├── firewall-rule-order.md   # Master cross-fragment apply order -- read before building any of the above
 │   ├── verification-checklist.md # Pre-event runbook to confirm every control actually works
+│   ├── access-point-sonicpoint-ace.md # Selected AP hardware, OpenWrt, RF/capacity gates
 │   └── ecosystem-architecture.md # How this repo, cei-labs-engine, and CEI-Labs-Wargames fit together
 ├── config/
 │   ├── pfsense/                 # pfSense XML fragments (aliases, limiters, NAT, filter rules)
@@ -58,7 +59,7 @@ profile:
 | **Core Router / Firewall** | Refurbished SFF Desktop (e.g., Dell OptiPlex / HP ProDesk) | Intel Core i3/i5, 8GB RAM, 120GB SSD. Must install **pfSense** or **OPNsense** (Open Source). |
 | **Network Interface Card** | PCIe Multi-Port Intel Gigabit NIC | **Critical:** Intel chipsets (e.g., i350-T4) to process high packet streams in hardware rather than overloading the host CPU. |
 | **Core Switch** | 24-Port Managed Layer 2 Gigabit Switch | Must support **802.1Q VLAN tagging**, Access Control Lists (ACLs), and per-port **Port Isolation** (a.k.a. Protected Ports / Private VLAN Edge) — required on the wired player ports, VLAN tagging alone is not sufficient for peer isolation. **RA-Guard** recommended if available (blocks rogue IPv6 router advertisements on player ports — see `docs/network-topology.md` §1). (e.g., TP-Link JetStream series). |
-| **Wireless Access Points** | 3 to 4 Multi-Node Business APs | **Minimum Wi-Fi 6 (802.11ax)** capable of broadcasting multiple SSIDs mapped to VLANs with **Client Isolation** enabled, **WPA2-Personal or WPA3-Personal** (WPA3 preferred if every expected client supports it — see `docs/network-topology.md` §1 for the per-SSID requirement). No open/unauthenticated SSID on any VLAN. |
+| **Wireless Access Points** | Expected inventory: 2 SonicWall SonicPoint ACe (APL26-0AE) units with OpenWrt | Dual-radio 3x3 Wi-Fi 5 APs with two Gigabit ports, VLAN support, and 802.3at PoE. This is an explicit exception to the original Wi-Fi 6 recommendation. Two units imply roughly 40 participants per AP if all 80 use Wi-Fi—before secondary devices—so the RF/concurrency gates and wired-seat contingency in [`docs/access-point-sonicpoint-ace.md`](docs/access-point-sonicpoint-ace.md) are mandatory. |
 
 See [`docs/network-topology.md`](docs/network-topology.md) for the full
 wiring diagram and VLAN/subnet map, and

@@ -28,16 +28,26 @@ happens on the pfSense/OPNsense box itself.
 | :--- | :--- | :--- | :--- |
 | **WAN** | — (router WAN NIC) | N/A | Venue internet feed |
 | **LAN (uplink)** | Port 1 | 802.1Q Trunk | All VLANs (10, 20, 30, 40, 50) |
-| **AP Links** | Ports 2–5 | 802.1Q Trunk | Management (10), Player Wi-Fi (30), Staff Wi-Fi (50) |
+| **SonicPoint ACe AP Links** | Ports 2–5 | Isolated 802.1Q Trunk | Management (10), Player Wi-Fi (30), Staff Wi-Fi (50) |
 | **Docker Infrastructure Host** | Port 10 | Access (untagged) | VLAN 20 |
 | **Wired Hardline Stations** | Ports 11–24 | Access (untagged) | VLAN 40 |
 
 Notes:
 
+- The expected event inventory is two SonicPoint ACe units on ports 2 and 3.
+  Ports 4 and 5 are reserved for a spare, replacement, or capacity expansion.
+
 - AP trunk ports carry only the VLANs each AP actually broadcasts SSIDs
   for — typically Player Wi-Fi (30) and Staff Wi-Fi (50), plus Management
   (10) for the AP's own control-plane IP. Do **not** trunk VLAN 20 or 40 to
   APs.
+- The selected AP is the SonicWall SonicPoint ACe (APL26-0AE) running
+  OpenWrt. Follow [`access-point-sonicpoint-ace.md`](access-point-sonicpoint-ace.md)
+  for firmware pinning, radio planning, evidence, and capacity gates.
+- Configure AP trunk ports 2–5 as protected/isolated from one another while
+  permitting the router uplink on port 1. OpenWrt client isolation covers a
+  single BSS; switch isolation (or separate per-AP player VLANs) is required
+  to stop a player on one AP from reaching a player on another AP at Layer 2.
 - Every AP SSID-to-VLAN mapping must have **Client Isolation** (a.k.a. AP
   isolation / peer-to-peer blocking) enabled at the radio level. This stops
   same-SSID players from reaching each other directly over the air, which

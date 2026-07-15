@@ -44,6 +44,18 @@ the first time this is deployed to real hardware. `fix/master-rule-
 ordering-doc` is the only one of the six that's doc-only with nothing
 further to verify.
 
+## Selected AP update — 2026-07-15
+
+The event hardware is now identified as SonicWall SonicPoint ACe
+(APL26-0AE) units running OpenWrt. The selection and its live acceptance
+gates are documented in
+[`access-point-sonicpoint-ace.md`](access-point-sonicpoint-ace.md). Hardware
+identification closes the vendor/model planning gap, and the expected
+inventory is now two units. It does not close the Wi-Fi verification gap:
+firmware pinning, physical inventory confirmation, RF survey, same-AP and
+cross-AP isolation, full concurrent-client capacity, and degraded operation
+with one AP unavailable remain open until exercised on the physical units.
+
 ## Not done
 
 All six findings are merged to `main`. No PRs were opened (merged
