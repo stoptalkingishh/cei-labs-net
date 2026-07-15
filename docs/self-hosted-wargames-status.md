@@ -26,7 +26,7 @@ while that migration was being built, specifically to answer this repo's
 own open question from finding #7:
 
 - **`single-target`** (Bandit/Krypton — one persistent SSH box per team)
-  already falls within the documented `10.10.20.0/24:30000–32767` range
+  already falls within the documented `10.10.20.0/24:32000–32767` range
   (`security-qos-policy.md`, `network-topology.md`) — same mechanism this
   repo already accounted for.
 - **`target-attacker`** (Natas — one shared attacker + target per team)
@@ -35,7 +35,7 @@ own open question from finding #7:
   port allocator at all (a real gap, since fixed on the `cei-labs-engine`
   side to give it real SSH too — see that repo's status doc) and even after
   that fix, the attacker's *additional* SSH port draws from the exact same
-  `30000–32767` pool `single-target` already uses. Nothing beyond the
+  `32000–32767` pool `single-target` already uses. Nothing beyond the
   already-documented `80,443` is required for either instance type.
 
 Both `security-qos-policy.md` and `network-topology.md` were re-read in

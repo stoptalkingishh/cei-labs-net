@@ -241,7 +241,7 @@ traffic is shoved into a deliberately crippled pipe.
 | Queue | Priority | Matches |
 | :--- | :--- | :--- |
 | `qHigh` | **7 (highest)** | DNS (port 53 — post-NAT-redirect traffic to Unbound), ICMP (ping), any traffic to `10.10.20.0/24` (the CTF Infra subnet — CTFd/Traefik on ports 80/443; matches on the subnet, not a single host, since `cei-labs-engine` can span multiple Swarm nodes) |
-| `qInteractive` | **4** | SSH (port 22); HTTP/HTTPS to published challenge ports on VLAN 20; `10.10.20.0/24:30000-32767` (`cei-labs-engine`'s orchestrator-allocated SSH/analyst-workspace ports, live-confirmed — see `network-topology.md` "Challenge ports only") |
+| `qInteractive` | **4** | SSH (port 22); HTTP/HTTPS to published challenge ports on VLAN 20; `10.10.20.0/24:32000-32767` (`cei-labs-engine`'s default orchestrator-allocated SSH/analyst-workspace ports — see `network-topology.md` "Challenge ports only") |
 | `qDefault` | 2 | Everything else not otherwise classified |
 
 See [`ecosystem-architecture.md`](ecosystem-architecture.md) for what

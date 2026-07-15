@@ -142,11 +142,22 @@ range per team for Natas via `target-attacker`) — see
 release candidate now keeps every participant-controlled workload only on
 its own internal overlay. A trusted gateway owns Traefik labels and direct
 published ports. Bandit/Krypton and Natas gateway SSH/noVNC ports all draw
-from `30000–32767`; HTTP/noVNC through Traefik still uses `80,443`.
+from `32000–32767` by default; HTTP/noVNC through Traefik still uses `80,443`.
 
-This design is not considered proven until the native-Linux Swarm retest
-confirms participant access succeeds while internet egress, cross-team
-reach, management-plane reach, and route abuse through the gateway fail.
+**Native-Swarm result (2026-07-14/15):** the Engine trusted-gateway audit
+passed 42/42 checks. Participant web/SSH/noVNC access succeeded while target
+and attacker egress, cross-team reach, management-plane reach, and a
+reversible NET_ADMIN route-abuse attempt failed. Gateways ran non-root,
+read-only, capability-free, and with IP forwarding disabled. This proves the
+single-station Engine topology; venue VLAN/firewall/AP enforcement still
+requires the Net hardware checklist.
+
+The same run found Docker's default `/24` Swarm ingress allocator exhausted
+after repeated gateway churn despite only two visible endpoints. The station
+ingress network was rebuilt as non-overlapping `10.20.0.0/16`. This is a host
+Docker address pool, not a venue VLAN: operators must choose a range that does
+not overlap venue, VPN, management, or challenge networks and record it in
+the station deployment runbook.
 
 ## What's out of scope for `cei-labs-net`
 
