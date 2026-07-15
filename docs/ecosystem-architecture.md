@@ -21,9 +21,9 @@ pfSense/OPNsense  ──(cei-labs-net)──
 VLAN 20 — CTF Infrastructure host(s), Docker Swarm  ──(cei-labs-engine)──
    │  Traefik (ports 80/443, Swarm routing mesh)
    ├─▶ CTFd (+ instance-launcher plugin) ──▶ MariaDB, Redis
-   └─▶ Challenge Instance Orchestrator ──▶ per-team Juice Shop /
-        target+attacker containers, on overlay networks that never
-        include CTFd or the database
+   └─▶ Challenge Instance Orchestrator ──▶ per-team private overlays
+        ├─ participant-controlled Juice Shop / target / attacker
+        └─ hardened TCP gateway owning Traefik/published-port exposure
 
 CEI-Labs-Wargames (run from a staff machine / CI, not on the player network)
    │  deploy.sh → ctfcli → CTFD_URL + CTFD_TOKEN
@@ -134,21 +134,19 @@ three curriculum tracks. Add a pre-event connectivity check to
 `verification-checklist.md` (done) rather than assuming it's covered by
 the VLAN-20 checks.
 
-**Status update (2026-07-09):** all three tracks are being migrated to
-self-hosted `cei-labs-engine` instances (one persistent SSH box per team
+**Status update (2026-07-14):** all three tracks are self-hosted through
+`cei-labs-engine` instances (one persistent SSH box per team
 for Bandit/Krypton via `single-target`, one shared attacker + target
 range per team for Natas via `target-attacker`) — see
-`CEI-Labs-Wargames/docs/self-hosted-wargames-blueprint.md`. In progress
-on a feature branch, not yet on `main` in either repo. Once merged, this
-finding is resolved: no outbound-internet dependency, all traffic stays
-on VLAN 20, and the connectivity check above becomes unnecessary (leave
-it in the checklist until the migration actually lands on `main`).
-Confirmed while building that migration: `single-target` (Bandit/Krypton)
-already falls within the documented `30000–32767` range above;
-`target-attacker` (Natas) uses Traefik exclusively (no directly-published
-port at all for the attacker or target), so it needs nothing beyond the
-already-documented `80,443` — **no `cei-labs-net` change is required**
-for either instance type.
+`CEI-Labs-Wargames/docs/self-hosted-wargames-blueprint.md`. The Engine
+release candidate now keeps every participant-controlled workload only on
+its own internal overlay. A trusted gateway owns Traefik labels and direct
+published ports. Bandit/Krypton and Natas gateway SSH/noVNC ports all draw
+from `30000–32767`; HTTP/noVNC through Traefik still uses `80,443`.
+
+This design is not considered proven until the native-Linux Swarm retest
+confirms participant access succeeds while internet egress, cross-team
+reach, management-plane reach, and route abuse through the gateway fail.
 
 ## What's out of scope for `cei-labs-net`
 

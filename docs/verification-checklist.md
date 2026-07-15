@@ -82,7 +82,7 @@ the underlying rule order is correct in general.
 - [ ] VLAN 30/40 client **can** reach published challenge ports on
       `10.10.20.0/24` (Docker host / CTF Infra), including the
       `30000-32767/tcp` range if VLAN 20 runs `cei-labs-engine` (its
-      orchestrator's SSH/analyst-workspace ports — confirm with
+      orchestrator's trusted gateway/analyst-workspace ports — confirm with
       `nc -zv <ctf-infra-ip> 32000` or similar against a real allocated
       instance).
 - [ ] `nmap -sn 10.10.32.0/22` from a player client returns **no other

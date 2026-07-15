@@ -152,7 +152,7 @@ ports" concretely means:
 | Port(s) | Protocol | Purpose |
 | :--- | :--- | :--- |
 | 80, 443 | TCP | Traefik ingress (CTFd, and Traefik-routed challenge instances) |
-| 30000–32767 | TCP | `cei-labs-engine`'s orchestrator: directly-published ports for `single-target` SSH-style instances and bulk-spawned analyst/Kali workspaces (confirmed live — see `ORCHESTRATOR_SSH_PORT_RANGE_START/END` and `ANALYST_BASE_PORT` in `cei-labs-engine`'s `docker/.env.example`) |
+| 30000–32767 | TCP | `cei-labs-engine`'s orchestrator: trusted per-instance gateway ports for single-target SSH and range-attacker SSH/noVNC, plus bulk-spawned analyst/Kali workspaces (see `ORCHESTRATOR_SSH_PORT_RANGE_START/END` and `ANALYST_BASE_PORT` in `cei-labs-engine`'s `docker/.env.example`) |
 
 Any VLAN-20 deployment that isn't `cei-labs-engine` will have its own port
 list — treat the table above as the concrete instance of "challenge ports
