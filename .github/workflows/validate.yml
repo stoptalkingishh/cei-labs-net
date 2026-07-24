@@ -19,6 +19,9 @@ jobs:
         run: |
           python -c "import glob, xml.etree.ElementTree as ET; [ET.parse(f) for f in glob.glob('config/pfsense/*.xml')]; print('all pfSense XML well-formed')"
 
+      - name: Check firewall rule ordering invariant
+        run: python scripts/check_firewall_rule_order.py
+
   markdown:
     name: Markdown
     runs-on: ubuntu-latest
