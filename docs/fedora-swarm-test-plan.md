@@ -27,8 +27,10 @@ Live discovery from OPNsense and the operator laptop currently shows:
 | Host | Evidence | Current status |
 | :--- | :--- | :--- |
 | `192.168.10.120` | DHCP lease `DESKTOP-Q8892V6`; local laptop | Operator workstation only. Do not include this laptop in the CEI Labs Swarm stack or count its Docker Desktop Swarm as event capacity. |
-| `192.168.10.192` | OPNsense ARP: Dell MAC `d4:ae:52:cc:7a:f1`; laptop TCP check | SSH port 22 is open. Ports 80, 443, 2377, 7946, and 4789 are not open yet. Treat as the first Fedora/server candidate to verify. |
-| `192.168.10.235` | dnsmasq lease hostname `host`, MAC `00:d8:61:e5:4e:0f` | No tested service responded on ports 22, 80, 443, 2377, 7946, or 4789. Treat as an unverified lease, not an accepted Swarm node. |
+| `192.168.10.192` | Local name `fedora-2.local`; operator-reported Fedora server | Initial manager candidate. Ping works from the operator workstation, but SSH and Docker/Swarm ports were closed in the latest check. |
+| `192.168.10.235` | Local name `host.local`; operator-reported Fedora server | Worker candidate. Ping works from the operator workstation, but SSH and Docker/Swarm ports were closed in the latest check. |
+| `192.168.10.112` | Local name `fedora.local`; operator-reported Fedora server | Worker candidate. Ping works from the operator workstation, but SSH and Docker/Swarm ports were closed in the latest check. |
+| `192.168.10.67` | Local name `fedora3.local`; operator-reported Fedora server | Worker candidate. Ping works from the operator workstation, but SSH and Docker/Swarm ports were closed in the latest check. |
 | `10.10.32.2`, `10.10.32.3` | OPNsense ARP on Player Wi-Fi | NETGEAR AP/client-bridge devices. Do not join these to Swarm. |
 
 ## Target end state
@@ -39,12 +41,15 @@ Live discovery from OPNsense and the operator laptop currently shows:
    - Player Wi-Fi: `10.10.32.0/22`, gateway `10.10.32.1`.
    - Swarm nodes live only on `192.168.10.0/24`.
 2. The first stable Fedora server becomes the primary Swarm manager.
-   - Current candidate: `192.168.10.192`, pending SSH login and OS
-     verification.
-   - Reserve its IP in OPNsense DHCP or assign it statically before deploying
+   - Current candidate: `192.168.10.192`, pending SSH login, CPU/RAM, OS, and
+     internet verification.
+   - Reserve/static-assign its IP in OPNsense before deploying
      `cei-labs-engine`.
 3. Additional Fedora servers join as workers after identity, OS, storage, and
    firewall verification.
+   - Current worker candidates: `192.168.10.235`, `192.168.10.112`, and
+     `192.168.10.67`.
+   - Reserve/static-assign each worker address before joining it to the Swarm.
 4. The local Windows laptop is excluded from the CEI Labs Swarm stack. Do not
    use Docker Desktop on the laptop as Swarm capacity for this deployment.
 5. `cei-labs-engine` deploys unchanged through Docker Swarm:
@@ -122,10 +127,13 @@ this after the host identities are verified:
 
 ```ini
 [swarm_managers]
-node1 ansible_host=192.168.10.192 ansible_user=<fedora-admin-user>
+fedora-2 ansible_host=192.168.10.192 ansible_user=ismaelrodriguez
 
 [swarm_workers]
-# node2 ansible_host=<next-verified-fedora-ip> ansible_user=<fedora-admin-user>
+# Enable after SSH, static addressing, OS identity, and internet checks pass.
+# host ansible_host=192.168.10.235 ansible_user=ismaelrodriguez
+# fedora ansible_host=192.168.10.112 ansible_user=ismaelrodriguez
+# fedora3 ansible_host=192.168.10.67 ansible_user=ismaelrodriguez
 
 [swarm_cluster:children]
 swarm_managers
@@ -193,10 +201,14 @@ Do not mark the Swarm usable until these pass:
 
 ## Current blockers
 
-- Confirm SSH credentials and OS identity for `192.168.10.192`.
-- Decide whether `192.168.10.235` is a Fedora server, an offline/stale lease,
-  or something else.
-- Reserve stable addresses for accepted Fedora servers in OPNsense.
+- Make SSH reachable from the deployment workstation to `192.168.10.192`,
+  `192.168.10.235`, `192.168.10.112`, and `192.168.10.67`.
+- Confirm CPU/RAM, OS identity, storage, and Docker state for all four Fedora
+  server candidates.
+- Reserve/static-assign stable addresses for accepted Fedora servers in
+  OPNsense.
+- Verify outbound IPv4 internet from all Fedora servers after the OPNsense WAN
+  repair.
 - Decide the base domain/DNS override for CTFd and wildcard app routing on the
   live network.
 - Keep WAN `ue0` link-state cleanup separate from the internal Swarm task.
