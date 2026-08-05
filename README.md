@@ -43,10 +43,13 @@ cei-labs-net/
 │   ├── firewall-rule-order.md   # Master cross-fragment apply order -- read before building any of the above
 │   ├── verification-checklist.md # Pre-event runbook to confirm every control actually works
 │   ├── access-point-sonicpoint-ace.md # Selected AP hardware, OpenWrt, RF/capacity gates
-│   └── ecosystem-architecture.md # How this repo, cei-labs-engine, and CEI-Labs-Wargames fit together
+│   ├── ecosystem-architecture.md # How this repo, cei-labs-engine, and CEI-Labs-Wargames fit together
+│   ├── opnsense-end-state.md    # Live-box implementation checklist (two-network topology, overrides five-VLAN)
+│   ├── fedora-swarm-test-plan.md # Live Docker Swarm on the 192.168.10.0/24 server network
+│   └── headscale-remote-access.md # Self-hosted remote access (Headscale) runbook
 ├── config/
 │   ├── pfsense/                 # pfSense XML fragments (aliases, limiters, NAT, filter rules)
-│   └── opnsense/                # OPNsense equivalents (Shaper, Unbound, Zenarmor notes)
+│   └── opnsense/                # OPNsense equivalents (Shaper, Unbound, Zenarmor, Headscale notes)
 └── docker/
     ├── docker-compose.yml       # Reusable, hardened challenge deployment template
     └── .env.example
