@@ -18,6 +18,18 @@ the full record.
 - Add a Fedora Swarm test plan for the live `192.168.10.0/24` server network,
   including current server candidates, `cei-labs-engine` Ansible alignment,
   required ports, validation gates, and blockers before joining hosts.
+- **Remote access via Headscale (plan/runbook only — no live hardware in
+  this environment to test against):** self-hosted Tailscale-compatible
+  control plane so staff can reach the CTF Infrastructure hosts
+  (`192.168.10.0/24`) from anywhere without per-service WAN exposure.
+  - `docs/headscale-remote-access.md` — full runbook (jail on the OPNsense
+    box + HAProxy/ACME TLS, Docker-on-LAN-host fallback, ACL default-deny,
+    subnet routing).
+  - `config/opnsense/headscale-notes.md` — OPNsense-specific jail, HAProxy/
+    ACME, and WebSocket-caveat notes.
+  - `docs/verification-checklist.md` §9 — remote-access verification checks.
+  - Open items (FQDN + exact node set) must be resolved before enabling
+    ACLs/subnet routes; see the runbook's "Open items" section.
 
 ## Milestones before this file existed
 
