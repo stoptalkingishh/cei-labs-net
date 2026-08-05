@@ -27,10 +27,10 @@ Live discovery from OPNsense and the operator laptop currently shows:
 | Host | Evidence | Current status |
 | :--- | :--- | :--- |
 | `192.168.10.120` | DHCP lease `DESKTOP-Q8892V6`; local laptop | Operator workstation only. Do not include this laptop in the CEI Labs Swarm stack or count its Docker Desktop Swarm as event capacity. |
-| `192.168.10.192` | Local name `fedora-2.local`; operator-reported Fedora server | Initial manager candidate. Ping works from the operator workstation, but SSH and Docker/Swarm ports were closed in the latest check. |
-| `192.168.10.235` | Local name `host.local`; operator-reported Fedora server | Worker candidate. Ping works from the operator workstation, but SSH and Docker/Swarm ports were closed in the latest check. |
-| `192.168.10.112` | Local name `fedora.local`; operator-reported Fedora server | Worker candidate. Ping works from the operator workstation, but SSH and Docker/Swarm ports were closed in the latest check. |
-| `192.168.10.67` | Local name `fedora3.local`; operator-reported Fedora server | Worker candidate. Ping works from the operator workstation, but SSH and Docker/Swarm ports were closed in the latest check. |
+| `192.168.10.13` | Verified hostname `cei-ryzen5-61g-swarm01`; Ryzen 5 7600, 61 GiB RAM | Primary manager candidate. Docker is installed, but it currently has an independent one-node Swarm advertising stale address `192.168.1.173`. |
+| `192.168.10.11` | Verified hostname `cei-i7-31g-swarm02`; Intel i7-10750H, 31 GiB RAM | Worker candidate. Docker is installed, but it currently has an independent one-node Swarm advertising stale address `192.168.1.98` and an existing `cei-labs` stack. |
+| `192.168.10.192` | Verified hostname `cei-xeon-e3-8g-swarm03`; Xeon E3-1240 v2, 7.7 GiB RAM | Worker candidate. SSH and sudo work, but Docker is not installed. |
+| `192.168.10.112` | Local name resolution is stale/ambiguous | Not yet accepted. Host pings but refuses SSH; proposed static target `192.168.10.12` is not reachable yet. |
 | `10.10.32.2`, `10.10.32.3` | OPNsense ARP on Player Wi-Fi | NETGEAR AP/client-bridge devices. Do not join these to Swarm. |
 
 ## Target end state
@@ -40,15 +40,18 @@ Live discovery from OPNsense and the operator laptop currently shows:
      `192.168.10.1`.
    - Player Wi-Fi: `10.10.32.0/22`, gateway `10.10.32.1`.
    - Swarm nodes live only on `192.168.10.0/24`.
-2. The first stable Fedora server becomes the primary Swarm manager.
-   - Current candidate: `192.168.10.192`, pending SSH login, CPU/RAM, OS, and
-     internet verification.
+2. The strongest verified Fedora server becomes the primary Swarm manager.
+   - Current candidate: `192.168.10.13`
+     (`cei-ryzen5-61g-swarm01`), pending stale Swarm reset/re-init with the
+     current `192.168.10.13` advertise address.
    - Reserve/static-assign its IP in OPNsense before deploying
      `cei-labs-engine`.
 3. Additional Fedora servers join as workers after identity, OS, storage, and
    firewall verification.
-   - Current worker candidates: `192.168.10.235`, `192.168.10.112`, and
-     `192.168.10.67`.
+   - Current worker candidates: `192.168.10.11`
+     (`cei-i7-31g-swarm02`) and `192.168.10.192`
+     (`cei-xeon-e3-8g-swarm03`).
+   - `192.168.10.112` remains blocked until SSH works.
    - Reserve/static-assign each worker address before joining it to the Swarm.
 4. The local Windows laptop is excluded from the CEI Labs Swarm stack. Do not
    use Docker Desktop on the laptop as Swarm capacity for this deployment.
@@ -127,13 +130,13 @@ this after the host identities are verified:
 
 ```ini
 [swarm_managers]
-fedora-2 ansible_host=192.168.10.192 ansible_user=ismaelrodriguez
+cei-ryzen5-61g-swarm01 ansible_host=192.168.10.13 ansible_user=ismaelrodriguez
 
 [swarm_workers]
 # Enable after SSH, static addressing, OS identity, and internet checks pass.
-# host ansible_host=192.168.10.235 ansible_user=ismaelrodriguez
-# fedora ansible_host=192.168.10.112 ansible_user=ismaelrodriguez
-# fedora3 ansible_host=192.168.10.67 ansible_user=ismaelrodriguez
+# cei-i7-31g-swarm02 ansible_host=192.168.10.11 ansible_user=ismaelrodriguez
+# cei-xeon-e3-8g-swarm03 ansible_host=192.168.10.192 ansible_user=ismaelrodriguez
+# CHANGE_ME_FOR_192_168_10_112 ansible_host=192.168.10.112 ansible_user=ismaelrodriguez
 
 [swarm_cluster:children]
 swarm_managers
@@ -201,10 +204,12 @@ Do not mark the Swarm usable until these pass:
 
 ## Current blockers
 
-- Make SSH reachable from the deployment workstation to `192.168.10.192`,
-  `192.168.10.235`, `192.168.10.112`, and `192.168.10.67`.
-- Confirm CPU/RAM, OS identity, storage, and Docker state for all four Fedora
-  server candidates.
+- Rebuild or repair the stale independent Swarms on `192.168.10.13` and
+  `192.168.10.11` so they advertise current `192.168.10.x` addresses.
+- Install Docker on `192.168.10.192` after outbound internet is restored.
+- Make SSH reachable from the deployment workstation to `192.168.10.112`.
+- Confirm CPU/RAM, OS identity, storage, and Docker state for any additional
+  Fedora server candidates.
 - Reserve/static-assign stable addresses for accepted Fedora servers in
   OPNsense.
 - Verify outbound IPv4 internet from all Fedora servers after the OPNsense WAN
