@@ -7,11 +7,14 @@ the full record.
 
 ## [Unreleased]
 
-- Add an OPNsense end-state runbook for the live CEI-Labs box: two physical
-  interfaces, VLAN 20 server network, three APs in bridge/AP mode, and
-  Headscale deployment gates.
-- Update AP inventory assumptions from two SonicPoint ACe units to three
-  planned APs plus one spare/expansion switch port.
+- Add an OPNsense end-state runbook for the live CEI-Labs box based on
+  authenticated router discovery: `em0` LAN/CTF infra, `ue0` WAN, and `ue1`
+  dedicated Player-WiFi with the `10.10.32.0/22` DHCP scope.
+- Record devices visible from the OPNsense box, including the operator
+  laptop, a Dell LAN device, and two NETGEAR devices on Player-WiFi.
+- Document that the prior five-VLAN design is stale for this deployment and
+  that leftover VLAN interfaces `vlan01`-`vlan05` still need cleanup if the
+  simplified two-network topology remains final.
 
 ## Milestones before this file existed
 

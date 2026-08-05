@@ -1,123 +1,132 @@
 # OPNsense End-State Buildout
 
-This is the implementation checklist for the current CEI-Labs edge box target:
-OPNsense on a two-interface firewall, one managed switch, VLAN-separated server
-and player networks, three bridge-only APs, and Headscale for staff remote
-access.
+This is the implementation checklist for the current live CEI-Labs OPNsense
+box. It supersedes the earlier five-VLAN router-on-a-stick plan for this
+deployment.
 
-Use this as the top-level build sheet. The deeper security controls remain in
-[`network-topology.md`](network-topology.md),
-[`security-qos-policy.md`](security-qos-policy.md), and
-[`verification-checklist.md`](verification-checklist.md).
+Source of truth for this page is live router discovery from
+`cei-router.ctf.internal` at `https://192.168.10.1`, plus the prior Claude
+hardware notes for the same box.
 
-## Physical interface assignment
+## Current live hardware state
 
-The OPNsense box has exactly two required physical interfaces:
+Verified from the OPNsense box with `hostname`, `uname -a`, `ifconfig -a`,
+`netstat -rn`, `arp -an`, `sockstat -4 -l`, `pciconf -lv`, `usbconfig`, and
+`configctl interface list arp`.
 
-| Interface | Role | Connects to | Configuration |
+| Device | OPNsense role | Live interface | Addressing | Link state |
+| :--- | :--- | :--- | :--- | :--- |
+| Onboard Intel I219-V | LAN / management + CTF infra | `em0` | `192.168.10.1/24` | active, 1000baseT full-duplex |
+| Lenovo USB-C Ethernet | WAN | `ue0` | DHCP/DHCP6, currently `192.168.1.111/24` when link is up | reported no carrier during the latest SSH check |
+| Realtek RTL8153 USB Ethernet | Player Wi-Fi | `ue1` / `opt3` | `10.10.32.1/22` | active, 1000baseT full-duplex |
+| Intel Wireless-AC 8265 | unused legacy wireless WAN | `iwm0_wlan0` | no carrier | not part of target state |
+
+The practical deployment is now two internal networks plus WAN:
+
+| Network | Interface | Subnet | DHCP |
 | :--- | :--- | :--- | :--- |
-| WAN | Internet uplink | Venue ISP/modem/upstream router | DHCP or static from venue; no player/client devices |
-| LAN trunk | 802.1Q trunk | Managed switch port 1 | Parent interface for VLANs 10, 20, 30, 40, 50 |
+| LAN / management / CTF infra | `em0` | `192.168.10.0/24` | dnsmasq range `192.168.10.41`-`192.168.10.245`, 86400s |
+| Player Wi-Fi | `ue1` / `opt3` | `10.10.32.0/22` | dnsmasq range `10.10.32.10`-`10.10.35.250`, 7200s |
+| WAN | `ue0` | DHCP from upstream `192.168.1.0/24` network | upstream-provided |
 
-Do not use extra NICs for ad hoc management or AP links unless the topology is
-rewritten. The LAN trunk is the mediator path: APs, server hosts, staff devices,
-and players all reach OPNsense through VLAN interfaces on that trunk, and
-OPNsense remains the only router, DHCP server, resolver, and policy boundary.
+This means the old `10.10.10.0/24`, `10.10.20.0/24`, `10.10.40.0/24`, and
+`10.10.50.0/24` segmented design is not the current live deployment.
 
-## VLAN interfaces on OPNsense
+## Leftover VLAN state to clean up
 
-Create these VLANs on the LAN-trunk parent interface:
+The router still has leftover VLAN interfaces from the earlier design:
 
-| VLAN | Interface name | IPv4 gateway | DHCP role |
+| Interface | VLAN tag | Parent | Description |
+| :--- | :---: | :--- | :--- |
+| `vlan01` | 10 | `em0` | `VLAN10_Management` |
+| `vlan02` | 20 | `em0` | `VLAN20_CTF_Infra` |
+| `vlan03` | 30 | `em0` | stale `VLAN30_Player_WiFi` tag |
+| `vlan04` | 40 | `em0` | `VLAN40_Player_Wired` |
+| `vlan05` | 50 | `em0` | `VLAN50_Staff` |
+
+These VLANs are active at the OS level but are unused leftovers now that
+Player Wi-Fi is on the dedicated `ue1` interface. Before declaring the box
+clean, remove or disable these stale VLAN assignments through the OPNsense
+configuration workflow and re-run interface discovery.
+
+## Devices visible from OPNsense
+
+Latest ARP/device view from the router:
+
+| IP | MAC | Interface | Manufacturer / likely role |
 | :--- | :--- | :--- | :--- |
-| 10 | `vlan10_mgmt` | `10.10.10.1/24` | Static/reserved only |
-| 20 | `vlan20_ctf_infra` | `10.10.20.1/24` | Static/reserved server leases |
-| 30 | `vlan30_player_wifi` | `10.10.32.1/22` | Player Wi-Fi DHCP, 7200s lease |
-| 40 | `vlan40_player_wired` | `10.10.40.1/24` | Wired-player DHCP, 7200s lease |
-| 50 | `vlan50_staff` | `10.10.50.1/24` | Static/reserved or staff DHCP |
+| `192.168.10.1` | `e8:6a:64:41:68:54` | `em0` | OPNsense LAN |
+| `192.168.10.120` | `b4:a9:fc:62:11:c1` | `em0` | `DESKTOP-Q8892V6`, operator laptop |
+| `192.168.10.192` | `d4:ae:52:cc:7a:f1` | `em0` | Dell device |
+| `192.168.1.111` | `60:7d:09:3a:f0:21` | `ue0` | OPNsense WAN adapter |
+| `192.168.1.254` | `68:ab:a9:49:fc:e1` | `ue0` | upstream gateway |
+| `10.10.32.1` | `9c:eb:e8:c3:70:92` | `ue1` | OPNsense Player-WiFi gateway |
+| `10.10.32.2` | `2c:30:33:41:8b:7a` | `ue1` | NETGEAR AP/client bridge |
+| `10.10.32.3` | `34:98:b5:64:16:9a` | `ue1` | NETGEAR AP/client bridge |
 
-Disable IPv6 globally and set IPv6 configuration type to `None` on every VLAN
-interface before opening player networks.
+dnsmasq lease data additionally showed:
 
-## Server network
-
-VLAN 20 is the server network. The reference `cei-labs-engine` host lands on
-switch port 10 as an untagged VLAN 20 access port.
-
-Minimum static/reserved assignments:
-
-| Device | Address | Notes |
+| IP | MAC | Hostname |
 | :--- | :--- | :--- |
-| OPNsense VLAN 20 gateway | `10.10.20.1` | Default gateway for server network |
-| Primary CEI-Labs engine host | `10.10.20.10` | Docker/Swarm host for CTFd, Traefik, orchestrator |
-| Additional engine hosts | `10.10.20.11+` | Only if multi-node Swarm is intentionally used |
+| `192.168.10.120` | `b4:a9:fc:62:11:c1` | `DESKTOP-Q8892V6` |
+| `192.168.10.235` | `00:d8:61:e5:4e:0f` | `host` |
 
-The only player-facing server access should be the published challenge and
-scoreboard ports documented in `network-topology.md`. Management surfaces stay
-reachable from VLAN 50 and, if explicitly allowed, Headscale staff nodes.
+The AP lane should treat the two visible NETGEAR devices as real hardware to
+verify first. If the final requirement remains three APs, add and verify a
+third AP on `ue1`/Player-WiFi and capture its ARP/DHCP entry before marking
+wireless complete.
 
-## Three AP layout
+## Listening services on the router
 
-All APs run as bridge-only OpenWrt access points. They do not route, NAT,
-forward DNS, run DHCP, or mediate policy. OPNsense mediates by being the VLAN
-gateway and firewall for every SSID.
+Latest IPv4 listeners:
 
-| AP | Switch port | Port mode | VLANs |
-| :--- | :--- | :--- | :--- |
-| AP-1 | 2 | Isolated 802.1Q trunk | 10, 30, 50 |
-| AP-2 | 3 | Isolated 802.1Q trunk | 10, 30, 50 |
-| AP-3 | 4 | Isolated 802.1Q trunk | 10, 30, 50 |
-| Spare AP | 5 | Disabled until needed | 10, 30, 50 when assigned |
-
-Required SSID mapping:
-
-| SSID class | VLAN | Required AP behavior |
+| Service | Listener | Notes |
 | :--- | :--- | :--- |
-| Player Wi-Fi | 30 | WPA2/WPA3-Personal, client isolation enabled, event passphrase |
-| Staff Wi-Fi | 50 | WPA2/WPA3-Personal, separate staff passphrase, client isolation enabled |
-| AP management | 10 | No public SSID unless explicitly needed; management reachable only from approved staff/management sources |
+| OPNsense web UI | `*:80`, `*:443` | lighttpd |
+| SSH | `*:22` | enabled for root/admin workflow |
+| dnsmasq DHCP | `*:67` | DHCP on LAN and Player-WiFi ranges |
+| Unbound DNS | `*:53` | DNS listener |
+| NTP | `*:123`, `192.168.10.1:123`, `10.10.32.1:123` | local time service |
 
-The switch must isolate AP trunk ports 2-5 from one another for tagged player
-traffic while still allowing each AP to reach port 1. If the switch cannot
-isolate tagged AP trunks, use one player VLAN per AP and route/firewall between
-them on OPNsense instead of putting all APs on one Layer-2 player segment.
+## Immediate end-state tasks
 
-## Headscale
+1. Remove or disable stale VLAN interfaces `vlan01`-`vlan05` if the two-network
+   topology is final.
+2. Keep `em0` as the combined management/CTF-infra LAN unless the operator
+   explicitly reintroduces a dedicated server VLAN.
+3. Keep `ue1` as the dedicated Player-WiFi interface with gateway
+   `10.10.32.1/22` and DHCP `10.10.32.10`-`10.10.35.250`.
+4. Validate both visible NETGEAR APs are pure bridge/AP devices:
+   no DHCP server, no NAT, no routing, and player clients receive OPNsense
+   leases from `10.10.32.0/22`.
+5. Add and validate the third AP only if three-AP coverage remains required.
+6. Re-check WAN link state on `ue0`; latest SSH discovery reported `no carrier`
+   even though configctl still showed the prior DHCP lease.
+7. Decide whether Headscale should run on the OPNsense jail or the LAN host;
+   if Headscale advertises subnets, the current default route to expose is
+   `192.168.10.0/24`, not the stale `10.10.20.0/24`.
 
-Headscale is the staff remote-access control plane. It does not replace VLAN
-firewalling and must not expose player networks by default.
+## Verification commands
 
-Required end state:
-
-- Headscale reachable at a real public HTTPS FQDN, not a raw IP.
-- A staff tailnet/user namespace exists.
-- A subnet router advertises VLAN 20 only by default: `10.10.20.0/24`.
-- Player subnets are not advertised: `10.10.30.0/22`, `10.10.40.0/24`.
-- ACLs are default-deny and explicitly allow staff nodes to VLAN 20 server
-  destinations only unless the operator approves additional ranges.
-
-## Live discovery gate
-
-The following cannot be truthfully completed from this repo alone. Run them
-from an authenticated shell or console on the OPNsense box and paste results
-back into the deployment log:
+Run these from an authenticated OPNsense shell after each hardware or config
+change:
 
 ```sh
+hostname
 ifconfig -a
 netstat -rn
 arp -an
 sockstat -4 -l
+configctl interface list ifconfig
+configctl interface list arp
 ```
 
-From OPNsense UI or shell, also capture:
+For DHCP state, inspect:
 
-- assigned WAN/LAN parent interface names;
-- VLAN interface names and gateway addresses;
-- DHCP lease tables for VLANs 10, 20, 30, 40, 50;
-- ARP table showing visible APs, switch management IP, and VLAN 20 server host;
-- HAProxy/ACME status for Headscale;
-- Headscale node list and approved routes.
+```sh
+cat /var/db/dnsmasq.leases
+cat /usr/local/etc/dnsmasq.conf
+```
 
-Do not mark the box fully deployed until these observations match the tables
-above and the relevant checks in `verification-checklist.md` pass from client
-devices on the actual VLANs.
+Do not mark the box fully deployed until the live outputs match the intended
+two-network topology and the AP checks pass from real client devices.

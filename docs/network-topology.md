@@ -1,5 +1,13 @@
 # Network Topology & VLAN Architecture
 
+> **Live deployment note:** the current CEI-Labs OPNsense box does **not**
+> match this full five-VLAN reference design. Authenticated router discovery
+> shows a simplified live topology: `em0` LAN/CTF infra on `192.168.10.0/24`,
+> `ue1` dedicated Player-WiFi on `10.10.32.0/22`, and `ue0` WAN. Use
+> [`opnsense-end-state.md`](opnsense-end-state.md) as the deployment source
+> of truth for the live box. This page remains the fuller reference design if
+> the event later returns to VLAN 10/20/30/40/50 segmentation.
+
 This is a **router-on-a-stick** design: a single pfSense/OPNsense box with
 one LAN interface, trunked into a managed switch that fans out five VLANs to
 access points and wired stations. All inter-VLAN routing and firewalling

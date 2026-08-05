@@ -1,5 +1,12 @@
 # SonicWall SonicPoint ACe OpenWrt access-point plan
 
+> **Live deployment note:** authenticated OPNsense discovery currently shows
+> two NETGEAR devices on the dedicated Player-WiFi interface (`ue1`):
+> `10.10.32.2` and `10.10.32.3`. The SonicPoint ACe/OpenWrt content below is a
+> reference plan, not the verified live AP inventory. For the live box, start
+> with [`opnsense-end-state.md`](opnsense-end-state.md) and prove the NETGEAR
+> devices are pure bridge/AP devices before adding or replacing AP hardware.
+
 ## Decision and scope
 
 The selected event access-point platform is the **SonicWall SonicPoint ACe,
