@@ -26,7 +26,7 @@ Live discovery from OPNsense and the operator laptop currently shows:
 
 | Host | Evidence | Current status |
 | :--- | :--- | :--- |
-| `192.168.10.120` | DHCP lease `DESKTOP-Q8892V6`; local laptop | Already a one-node Docker Desktop Swarm manager on Docker Desktop's internal `192.168.65.3` address. Useful for local-only tests, not the Fedora-server Swarm target. |
+| `192.168.10.120` | DHCP lease `DESKTOP-Q8892V6`; local laptop | Operator workstation only. Do not include this laptop in the CEI Labs Swarm stack or count its Docker Desktop Swarm as event capacity. |
 | `192.168.10.192` | OPNsense ARP: Dell MAC `d4:ae:52:cc:7a:f1`; laptop TCP check | SSH port 22 is open. Ports 80, 443, 2377, 7946, and 4789 are not open yet. Treat as the first Fedora/server candidate to verify. |
 | `192.168.10.235` | dnsmasq lease hostname `host`, MAC `00:d8:61:e5:4e:0f` | No tested service responded on ports 22, 80, 443, 2377, 7946, or 4789. Treat as an unverified lease, not an accepted Swarm node. |
 | `10.10.32.2`, `10.10.32.3` | OPNsense ARP on Player Wi-Fi | NETGEAR AP/client-bridge devices. Do not join these to Swarm. |
@@ -45,8 +45,8 @@ Live discovery from OPNsense and the operator laptop currently shows:
      `cei-labs-engine`.
 3. Additional Fedora servers join as workers after identity, OS, storage, and
    firewall verification.
-4. The local Windows laptop can remain a development/test station, but it must
-   not be treated as production Swarm capacity unless explicitly accepted.
+4. The local Windows laptop is excluded from the CEI Labs Swarm stack. Do not
+   use Docker Desktop on the laptop as Swarm capacity for this deployment.
 5. `cei-labs-engine` deploys unchanged through Docker Swarm:
    - use `ansible/site.yml` to install Docker and form/grow the Swarm;
    - use `docker/stack.yml` for Traefik, CTFd, Redis, MariaDB, orchestrator,
