@@ -30,7 +30,7 @@ Live discovery from OPNsense and the operator laptop currently shows:
 | `192.168.10.13` | Verified hostname `cei-ryzen5-61g-swarm01`; Ryzen 5 7600, 61 GiB RAM | Primary manager candidate. Docker is installed, but it currently has an independent one-node Swarm advertising stale address `192.168.1.173`. |
 | `192.168.10.11` | Verified hostname `cei-i7-31g-swarm02`; Intel i7-10750H, 31 GiB RAM | Worker candidate. Docker is installed, but it currently has an independent one-node Swarm advertising stale address `192.168.1.98` and an existing `cei-labs` stack. |
 | `192.168.10.192` | Verified hostname `cei-xeon-e3-8g-swarm03`; Xeon E3-1240 v2, 7.7 GiB RAM | Worker candidate. SSH and sudo work, but Docker is not installed. |
-| `192.168.10.112` | Local name resolution is stale/ambiguous | Not yet accepted. Host pings but refuses SSH; proposed static target `192.168.10.12` is not reachable yet. |
+| `192.168.10.112` | Verified hostname `cei-ryzen5-15g-swarm04`; Ryzen 5 1600X, 15 GiB RAM | Worker candidate. SSH and sudo work, but Docker is not installed. Proposed static target `192.168.10.12` is not reachable yet. |
 | `10.10.32.2`, `10.10.32.3` | OPNsense ARP on Player Wi-Fi | NETGEAR AP/client-bridge devices. Do not join these to Swarm. |
 
 ## Target end state
@@ -51,7 +51,8 @@ Live discovery from OPNsense and the operator laptop currently shows:
    - Current worker candidates: `192.168.10.11`
      (`cei-i7-31g-swarm02`) and `192.168.10.192`
      (`cei-xeon-e3-8g-swarm03`).
-   - `192.168.10.112` remains blocked until SSH works.
+   - Additional worker candidate: `192.168.10.112`
+     (`cei-ryzen5-15g-swarm04`), pending Docker installation.
    - Reserve/static-assign each worker address before joining it to the Swarm.
 4. The local Windows laptop is excluded from the CEI Labs Swarm stack. Do not
    use Docker Desktop on the laptop as Swarm capacity for this deployment.
@@ -136,7 +137,7 @@ cei-ryzen5-61g-swarm01 ansible_host=192.168.10.13 ansible_user=ismaelrodriguez
 # Enable after SSH, static addressing, OS identity, and internet checks pass.
 # cei-i7-31g-swarm02 ansible_host=192.168.10.11 ansible_user=ismaelrodriguez
 # cei-xeon-e3-8g-swarm03 ansible_host=192.168.10.192 ansible_user=ismaelrodriguez
-# CHANGE_ME_FOR_192_168_10_112 ansible_host=192.168.10.112 ansible_user=ismaelrodriguez
+# cei-ryzen5-15g-swarm04 ansible_host=192.168.10.112 ansible_user=ismaelrodriguez
 
 [swarm_cluster:children]
 swarm_managers
@@ -206,8 +207,8 @@ Do not mark the Swarm usable until these pass:
 
 - Rebuild or repair the stale independent Swarms on `192.168.10.13` and
   `192.168.10.11` so they advertise current `192.168.10.x` addresses.
-- Install Docker on `192.168.10.192` after outbound internet is restored.
-- Make SSH reachable from the deployment workstation to `192.168.10.112`.
+- Install Docker on `192.168.10.192` and `192.168.10.112` after outbound
+  internet is restored.
 - Confirm CPU/RAM, OS identity, storage, and Docker state for any additional
   Fedora server candidates.
 - Reserve/static-assign stable addresses for accepted Fedora servers in
