@@ -3,8 +3,22 @@
 This document is the **plan + runbook** for spinning up a self-hosted
 [Headscale](https://headscale.net) control server — an open-source
 drop-in for the Tailscale coordination server — on the CEI-Labs edge
-router so staff can reach the servers (VLAN 20 CTF Infrastructure) from
-anywhere without punching per-service firewall holes.
+router so staff can reach the servers (CTF infrastructure, currently on the
+`192.168.10.0/24` LAN) from anywhere without punching per-service firewall
+holes.
+
+> **Live topology (verified 2026-08-05 over SSH by @Codex 5.5):** the box is
+> `cei-router.ctf.internal`, OPNsense 26.7. The deployment has shifted from
+> the original five-VLAN design to a **simplified two-network topology**:
+> - `em0` — LAN / management + CTF infra, `192.168.10.1/24`
+> - `ue1` (`opt3`) — Player Wi-Fi, `10.10.32.1/22`
+> - `ue0` — WAN
+> - Stale `vlan01`–`vlan05` (tags 10/20/30/40/50) still exist on `em0` but are
+>   **not** part of the active design.
+> The subnet the tailnet should expose for server access is therefore
+> **`192.168.10.0/24`** (not the older `10.10.20.0/24`). Player Wi-Fi
+> `10.10.32.0/22` must NOT be advertised. If a dedicated server VLAN is later
+> reintroduced, revisit this route.
 
 Headscale only runs the **control plane** (node identity, netmap, ACLs).
 Node-to-node traffic is encrypted WireGuard mesh with NAT traversal
@@ -26,26 +40,33 @@ Nominal platform is **OPNsense** (confirmed by the operator 2026-08-05:
 
 If the box were pfSense (no jails, no jail manager), the Docker-on-VLAN-20
 host path (Option B below) would be the fallback.
-
 ## Goals / non-goals
 
 - **Goal:** a staff node anywhere on the internet can `tailscale up
-  --login-server https://headscale.<domain>` and reach VLAN 20 CTF
-  infra hosts and the edge box.
+  --login-server https://headscale.<domain>` and reach the LAN hosts
+  (`192.168.10.0/24`, management + CTF infra) and the edge box.
 - **Non-goal:** exposing any service to the public WAN directly. The only
   inbound WAN exposure this adds is HTTPS (443) to the Headscale control
   plane. Everything else happens inside the mesh.
 
 ## Network model (this box)
 
-Router-on-a-stick (`docs/network-topology.md`): VLAN 10 mgmt, VLAN 20 CTF
-Infra, VLAN 30 player-wifi, VLAN 40 player wired, VLAN 50 staff. Inter-VLAN
-firewalling happens on the edge box. The servers to reach remotely live on
-**VLAN 20**. Staff/admin devices conventionally live on **VLAN 50**.
+The box currently runs a **simplified two-network topology** (verified
+2026-08-05), replacing the older five-VLAN router-on-a-stick design:
+
+- **LAN** (`em0`): `192.168.10.1/24` — management + CTF infra together.
+  This is the subnet the servers live on and the primary tailnet target.
+- **Player Wi-Fi** (`ue1`/`opt3`): `10.10.32.1/22` — player-facing, isolated
+  from the tailnet.
+- **WAN** (`ue0`): upstream.
+
+The `docs/network-topology.md` five-VLAN model (10 mgmt / 20 CTF / 30 player /
+40 wired / 50 staff) is the older design; stale `vlan01`–`vlan05` interfaces
+remain on `em0` but are not the active path.
 
 Headscale places a node *inside* the network that advertises subnet routes
-for the private ranges — peers reach `10.10.20.0/24` (and optionally
-`10.10.10.0/24`, `10.10.50.0/24`) through it. See "Subnet routers" below.
+for the private range — remote peers reach **`192.168.10.0/24`** through it.
+See "Subnet routers" below.
 
 ## Options
 
@@ -62,11 +83,11 @@ with OPNsense HAProxy + ACME for real TLS on WAN 443 → jail.
   backup — the install must be reproducible from this doc; adds HAProxy/ACME
   surface to the edge.
 
-### Option B — Headscale Docker on the VLAN 20 host (fallback)
+### Option B — Headscale Docker on a LAN host (fallback)
 
-Run Headscale as a container on the existing VLAN 20 Docker host where the
-servers already run. OPNsense NATs WAN 443 → host; TLS in the compose via
-Caddy/Traefik.
+Run Headscale as a container on a LAN host on `192.168.10.0/24` where the
+servers run (e.g. the Docker/CTF infra host). OPNsense NATs WAN 443 → host;
+TLS in the compose via Caddy/Traefik.
 
 - **Pros:** consistent with the repo's existing Docker pattern
   (`docker/docker-compose.yml`); container is easy to back up and restore.
@@ -103,7 +124,7 @@ documented as the fallback under `config/opnsense/headscale-notes.md`.
 | DB | SQLite | Single-operator tailnet; adequate |
 | Auth | Preauth keys; OIDC recommended later | Default-deny posture matches this repo |
 | MagicDNS | `tailnet.<domain>` | Internal names, not authoritative |
-| Subnet routes | Advertise `10.10.20.0/24` via the edge as a subnet router | Reach VLAN 20 hosts without agents on each |
+| Subnet routes | Advertise `192.168.10.0/24` via the edge as a subnet router | Reach LAN/CTF-infra hosts without agents on each |
 
 ## Open items (operator input before finalizing ACLs)
 
@@ -114,8 +135,9 @@ changes based on the answers**:
 1. **Public reachability:** confirm the FQDN (`headscale.<domain>`) that will
    resolve to the box's WAN IP. Fill `HEADSCALE_DOMAIN` with it.
 2. **Node set ("the servers"):** exactly which hosts must be reachable
-   remotely — VLAN 20 Docker host `10.10.20.0/24`, the edge box itself
-   (`10.10.10.1` mgmt / its LAN), staff VLAN 50? Used to scope the advertised
+   remotely — the LAN `192.168.10.0/24` (management + CTF infra +
+   `cei-router.ctf.internal`) — and whether a dedicated server VLAN is ever
+   reintroduced. Used to scope the advertised
    subnet routes and the ACL allow-list.
 
 ---
@@ -126,10 +148,9 @@ changes based on the answers**:
 
 Using OPNsense's Jail UI (or `iocage` CLI), create a jail `headscale`:
 
-- IP: a static address on a management/staff-facing interface reachable from
-  the edge (e.g. `10.10.10.2/24` on VLAN 10). Headscale only needs to be
-  reachable by the edge's HAProxy (loopback/local) and by registered nodes on
-  the WAN.
+- IP: a static address on the LAN (`192.168.10.0/24`) reachable from the
+  edge, e.g. `192.168.10.2/24`. Headscale only needs to be reachable by the
+  edge's HAProxy (loopback/local) and by registered nodes on the WAN.
 - Give it internet access for package install and for node coordination.
 - Enable `allow_sysvipc`/`allow.mount` only if the package install requires
   them; keep it minimal.
@@ -200,7 +221,7 @@ In OPNsense:
 1. **ACME:** add the FQDN `headscale.<domain>` under
    `Services → ACME Client`, issue a Let's Encrypt cert for it (HTTP-01 or
    DNS-01). List this cert in HAProxy `Settings → Virtual Servers → Certificates`.
-2. **HAProxy backend:** a backend server pointing at the jail `10.10.10.2:8080`.
+2. **HAProxy backend:** a backend server pointing at the jail `192.168.10.2:8080`.
    Headscale uses WebSocket/HTTP upgrades for the control connection — ensure
    HTTP/1.1 upgrade/websocket behaviour is enabled (default HAProxy handles
    `Upgrade`), and set `Connection` handling so the Noise upgrade isn't
@@ -248,17 +269,16 @@ Windows (PowerShell):
 iOS/Android: set **Alternative Coordination Server** to the Headscale URL in
 the Tailscale app, then authenticate.
 
-### 7. Make the edge a subnet router (reach VLAN 20 from anywhere)
+### 7. Make the edge a subnet router (reach the LAN from anywhere)
 
-The edge (or the VLAN 20 Docker host) runs a Tailscale node that advertises
-the private subnets, so remote staff nodes don't each need an agent on every
-server.
+The edge runs a Tailscale node that advertises the LAN subnet, so remote
+staff nodes don't each need an agent on every server.
 
 On the edge box (outside the jail), install the Tailscale binary and:
 
 ```sh
 tailscale up --login-server https://headscale.example.com \
-  --advertise-routes=10.10.20.0/24   # plus 10.10.10.0/24, 10.10.50.0/24 as needed
+  --advertise-routes=192.168.10.0/24   # LAN: management + CTF infra
 ```
 
 On the Headscale server, approve the route:
@@ -269,7 +289,7 @@ headscale nodes approve-routes -n <edge-node-id>   # or: routes in the node edit
 
 > **Security check:** only advertise subnets you actually want reachable
 > remotely, and reflect exactly that in the ACL allow-list (next section).
-> Do **not** advertise `10.10.30.0/22` / `10.10.40.0/24` player subnets.
+> Do **not** advertise the Player Wi-Fi subnet `10.10.32.0/22`.
 
 ### 8. ACLs (default-deny — edit `/etc/headscale/acl.hujson`)
 
@@ -279,11 +299,11 @@ open items above. Example:
 ```hujson
 {
   "acls": [
-    // Remote staff device -> VLAN 20 CTF Infra only
-    { "action": "accept", "src": ["tag:staff", "10.10.50.0/24"], "dst": ["10.10.20.0/24:*"] },
+    // Remote staff device -> LAN (management + CTF infra) only
+    { "action": "accept", "src": ["tag:staff"], "dst": ["192.168.10.0/24:*"] },
     // Allow the subnet router to relay (it must see the hosts it advertises)
-    { "action": "accept", "src": ["tag:edge"], "dst": ["10.10.20.0/24:*"] }
-    // NO accept for player subnets (10.10.30.0/22, 10.10.40.0/24)
+    { "action": "accept", "src": ["tag:edge"], "dst": ["192.168.10.0/24:*"] }
+    // NO accept for the Player Wi-Fi subnet (10.10.32.0/22)
   ],
   "tagOwners": { "tag:staff": ["emailid:..."] }
 }

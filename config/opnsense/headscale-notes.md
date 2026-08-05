@@ -2,8 +2,9 @@
 
 OPNsense-specific implementation notes for the Headscale remote-access
 runbook ([`docs/headscale-remote-access.md`](../../docs/headscale-remote-access.md)).
-Assumes OPNsense on the CEI-Labs edge box, router-on-a-stick topology,
-VLAN 20 = CTF Infrastructure (`10.10.20.0/24`).
+Assumes OPNsense on the CEI-Labs edge box, simplified two-network topology
+(verified 2026-08-05): LAN `em0` = management + CTF infra (`192.168.10.0/24`),
+Player Wi-Fi `ue1` = `10.10.32.0/22`, WAN `ue0`.
 
 ## 1. Install the plugins
 
@@ -25,8 +26,8 @@ Via the Jail UI (`System → Jail → Add`) or `iocage`:
 | Field | Value |
 | :--- | :--- |
 | Name | `headscale` |
-| Interface | one reachable by HAProxy (e.g. VLAN 10 mgmt `10.10.10.2/24`) |
-| IPv4 | `10.10.10.2` static, gateway = edge box `10.10.10.1` |
+| Interface | one reachable by HAProxy (e.g. LAN `192.168.10.2/24`) |
+| IPv4 | `192.168.10.2` static, gateway = edge box `192.168.10.1` |
 | Internet access | enabled (for `pkg install` and node coordination) |
 | Sysvipc / mounts | only what the package install requires; keep minimal |
 

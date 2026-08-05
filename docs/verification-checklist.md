@@ -255,18 +255,17 @@ from the same subnet the reverse proxy sits on can mask NAT/hairpin issues.
       WebSocket control connection survives HAProxy (a handshake that fails
       while `curl /health` succeeds points at HAProxy upgrade/WebSocket
       handling, per `config/opnsense/headscale-notes.md` §4's caveat).
-- [ ] A remote staff node can reach a **VLAN 20 host** over its private IP
-      (e.g. `10.10.20.x`) through the subnet router — succeeds only if the
-      subnet router advertises `10.10.20.0/24` and that route was approved on
-      the server.
+- [ ] A remote staff node can reach a **LAN host** over its private IP
+      (e.g. `192.168.10.x`) through the subnet router — succeeds only if the
+      subnet router advertises `192.168.10.0/24` and that route was approved
+      on the server.
 - [ ] **Cross-check every ACL-ed dst range:** the node reaches each subnet the
       ACL allow-list claims — and is **blocked** from any range not
       allow-listed (default-deny confirmed, not assumed).
 - [ ] The ACL file validates: `headscale acl validate -f /etc/headscale/acl.hujson`
       returns success and the saved policy takes effect (`headscale acl save`).
-- [ ] **Negative check:** a remote staff node cannot reach the player subnets
-      (`10.10.30.0/22`, `10.10.40.0/24`) — these must not be advertised or
-      allow-listed.
+- [ ] **Negative check:** a remote staff node cannot reach the Player Wi-Fi
+      subnet (`10.10.32.0/22`) — it must not be advertised or allow-listed.
 
 ---
 
