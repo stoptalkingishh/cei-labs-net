@@ -34,7 +34,11 @@ Current requirements:
 7. Headscale routes and ACLs must be based on the live networks, not stale repo
    assumptions. Today that means `192.168.10.0/24` is the likely server/operator
    route, not `10.10.20.0/24`, unless a dedicated server VLAN is reintroduced.
-8. The old five-VLAN reference design remains useful as documentation, but it is
+8. Fedora Docker Swarm planning for `cei-labs-engine` must use the live
+   `192.168.10.0/24` LAN/server network unless the operator explicitly
+   reintroduces a dedicated server VLAN. See
+   [`fedora-swarm-test-plan.md`](fedora-swarm-test-plan.md).
+9. The old five-VLAN reference design remains useful as documentation, but it is
    not the acceptance target for this deployment.
 
 ## Current live hardware state
@@ -134,6 +138,10 @@ Latest IPv4 listeners:
 7. Decide whether Headscale should run on the OPNsense jail or the LAN host;
    if Headscale advertises subnets, the current default route to expose is
    `192.168.10.0/24`, not the stale `10.10.20.0/24`.
+8. Verify the Fedora server candidates and form the local Docker Swarm per
+   [`fedora-swarm-test-plan.md`](fedora-swarm-test-plan.md). Current known
+   candidate `192.168.10.192` answers SSH but is not yet listening on Swarm or
+   engine ingress ports.
 
 ## Verification commands
 

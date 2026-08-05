@@ -74,7 +74,9 @@ DNS-lockdown, traffic-shaping, and QoS configuration.
 For the current live OPNsense-targeted buildout, use
 [`docs/opnsense-end-state.md`](docs/opnsense-end-state.md) as the
 implementation checklist that ties the verified interfaces, DHCP scopes,
-visible devices, AP lane, and Headscale routing decision together.
+visible devices, AP lane, Headscale routing decision, and local Fedora Swarm
+plan together. The live Fedora Swarm plan is
+[`docs/fedora-swarm-test-plan.md`](docs/fedora-swarm-test-plan.md).
 
 ---
 
@@ -97,11 +99,15 @@ visible devices, AP lane, and Headscale routing decision together.
    `security-qos-policy.md` documents one control in isolation, and
    applying them out of order can silently produce a configuration that
    looks complete but doesn't enforce what it claims to.
-4. Stand up the CTF Infrastructure host(s) on VLAN 20 (`docker swarm init`,
-   or join via `cei-labs-engine`'s Ansible playbook for multi-host) and
-   deploy [`cei-labs-engine`](https://github.com/stoptalkingishh/cei-labs-engine)'s
+4. Stand up the CTF Infrastructure host(s). In the generic reference design
+   this means VLAN 20, but in the current live OPNsense buildout it means
+   verified Fedora Swarm nodes on `192.168.10.0/24`; follow
+   [`docs/fedora-swarm-test-plan.md`](docs/fedora-swarm-test-plan.md). Use
+   `docker swarm init` for a single host or
+   `cei-labs-engine`'s Ansible playbook for multi-host, then deploy
+   [`cei-labs-engine`](https://github.com/stoptalkingishh/cei-labs-engine)'s
    Swarm stack — that's what actually serves CTFd/Traefik/challenges on
-   this VLAN. The hardened template in
+   this network. The hardened template in
    [`docker/docker-compose.yml`](docker/docker-compose.yml) here is for
    standalone challenge containers deployed *outside* that orchestrator,
    not a replacement for it (see
