@@ -242,6 +242,32 @@ Run these against a disposable test service deployed from
       the same `mem_limit` value used in `docker-compose.yml` gets enforced
       by the host.
 
+## 9. Remote access (Headscale)
+
+Run this section against a **staff device outside the LAN** (or with
+network access isolated from the edge box itself), since testing `HEADSCALE_`
+from the same subnet the reverse proxy sits on can mask NAT/hairpin issues.
+
+- [ ] `curl -sI https://headscale.<domain>/health` from a WAN-side client
+      returns `200` — control-plane reachable over public TLS.
+- [ ] `tailscale up --login-server https://headscale.<domain>` connects and
+      `tailscale status` shows the node as healthy — confirms the Noise/HSL
+      WebSocket control connection survives HAProxy (a handshake that fails
+      while `curl /health` succeeds points at HAProxy upgrade/WebSocket
+      handling, per `config/opnsense/headscale-notes.md` §4's caveat).
+- [ ] A remote staff node can reach a **VLAN 20 host** over its private IP
+      (e.g. `10.10.20.x`) through the subnet router — succeeds only if the
+      subnet router advertises `10.10.20.0/24` and that route was approved on
+      the server.
+- [ ] **Cross-check every ACL-ed dst range:** the node reaches each subnet the
+      ACL allow-list claims — and is **blocked** from any range not
+      allow-listed (default-deny confirmed, not assumed).
+- [ ] The ACL file validates: `headscale acl validate -f /etc/headscale/acl.hujson`
+      returns success and the saved policy takes effect (`headscale acl save`).
+- [ ] **Negative check:** a remote staff node cannot reach the player subnets
+      (`10.10.30.0/22`, `10.10.40.0/24`) — these must not be advertised or
+      allow-listed.
+
 ---
 
 ## Day-Of Smoke Test (abbreviated, run after final hardware placement)
