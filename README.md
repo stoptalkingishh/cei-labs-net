@@ -24,6 +24,12 @@ absolute isolation between players, caps overall data consumption, and
 aggressively throttles non-essential traffic (streaming, game downloads, OS
 updates) so bandwidth stays available for the CTF itself.
 
+> **Live deployment override:** the current CEI-Labs laptop/router buildout is
+> not trying to reproduce every detail of this repository's generic reference
+> architecture. For the current OPNsense box, operator requirements and live
+> discovery in [`docs/opnsense-end-state.md`](docs/opnsense-end-state.md)
+> override the older five-VLAN reference topology.
+
 ---
 
 ## Repository Layout
@@ -59,21 +65,32 @@ profile:
 | **Core Router / Firewall** | Refurbished SFF Desktop (e.g., Dell OptiPlex / HP ProDesk) | Intel Core i3/i5, 8GB RAM, 120GB SSD. Must install **pfSense** or **OPNsense** (Open Source). |
 | **Network Interface Card** | PCIe Multi-Port Intel Gigabit NIC | **Critical:** Intel chipsets (e.g., i350-T4) to process high packet streams in hardware rather than overloading the host CPU. |
 | **Core Switch** | 24-Port Managed Layer 2 Gigabit Switch | Must support **802.1Q VLAN tagging**, Access Control Lists (ACLs), and per-port **Port Isolation** (a.k.a. Protected Ports / Private VLAN Edge) — required on the wired player ports, VLAN tagging alone is not sufficient for peer isolation. **RA-Guard** recommended if available (blocks rogue IPv6 router advertisements on player ports — see `docs/network-topology.md` §1). (e.g., TP-Link JetStream series). |
-| **Wireless Access Points** | Expected inventory: 2 SonicWall SonicPoint ACe (APL26-0AE) units with OpenWrt | Dual-radio 3x3 Wi-Fi 5 APs with two Gigabit ports, VLAN support, and 802.3at PoE. This is an explicit exception to the original Wi-Fi 6 recommendation. Two units imply roughly 40 participants per AP if all 80 use Wi-Fi—before secondary devices—so the RF/concurrency gates and wired-seat contingency in [`docs/access-point-sonicpoint-ace.md`](docs/access-point-sonicpoint-ace.md) are mandatory. |
+| **Wireless Access Points** | Planned hardware varies by deployment | The live OPNsense box currently sees two NETGEAR devices on the dedicated Player-WiFi interface. The older SonicPoint ACe/OpenWrt plan remains a reference option, not the verified live inventory. |
 
 See [`docs/network-topology.md`](docs/network-topology.md) for the full
 wiring diagram and VLAN/subnet map, and
 [`docs/security-qos-policy.md`](docs/security-qos-policy.md) for the
 DNS-lockdown, traffic-shaping, and QoS configuration.
+For the current live OPNsense-targeted buildout, use
+[`docs/opnsense-end-state.md`](docs/opnsense-end-state.md) as the
+implementation checklist that ties the verified interfaces, DHCP scopes,
+visible devices, AP lane, Headscale routing decision, and local Fedora Swarm
+plan together. The live Fedora Swarm plan is
+[`docs/fedora-swarm-test-plan.md`](docs/fedora-swarm-test-plan.md).
 
 ---
 
 ## Quick Start
 
 1. Image the core router box with pfSense or OPNsense and complete the
-   interface assignment wizard (WAN + LAN trunk).
-2. Follow [`docs/network-topology.md`](docs/network-topology.md) to lay out
-   VLANs 10/20/30/40/50 on the core switch and APs.
+   interface assignment wizard. For the current live box, follow
+   [`docs/opnsense-end-state.md`](docs/opnsense-end-state.md) before the
+   generic five-VLAN reference plan below.
+2. For a new reference build, follow
+   [`docs/network-topology.md`](docs/network-topology.md) to lay out VLANs
+   10/20/30/40/50 on the core switch and APs. For the current live box, do not
+   do that unless the operator explicitly asks to abandon the simplified
+   topology.
 3. Apply the firewall/NAT/limiter rules in
    [`docs/security-qos-policy.md`](docs/security-qos-policy.md) (reference
    fragments live under `config/pfsense/` and `config/opnsense/`) —
@@ -82,11 +99,15 @@ DNS-lockdown, traffic-shaping, and QoS configuration.
    `security-qos-policy.md` documents one control in isolation, and
    applying them out of order can silently produce a configuration that
    looks complete but doesn't enforce what it claims to.
-4. Stand up the CTF Infrastructure host(s) on VLAN 20 (`docker swarm init`,
-   or join via `cei-labs-engine`'s Ansible playbook for multi-host) and
-   deploy [`cei-labs-engine`](https://github.com/stoptalkingishh/cei-labs-engine)'s
+4. Stand up the CTF Infrastructure host(s). In the generic reference design
+   this means VLAN 20, but in the current live OPNsense buildout it means
+   verified Fedora Swarm nodes on `192.168.10.0/24`; follow
+   [`docs/fedora-swarm-test-plan.md`](docs/fedora-swarm-test-plan.md). Use
+   `docker swarm init` for a single host or
+   `cei-labs-engine`'s Ansible playbook for multi-host, then deploy
+   [`cei-labs-engine`](https://github.com/stoptalkingishh/cei-labs-engine)'s
    Swarm stack — that's what actually serves CTFd/Traefik/challenges on
-   this VLAN. The hardened template in
+   this network. The hardened template in
    [`docker/docker-compose.yml`](docker/docker-compose.yml) here is for
    standalone challenge containers deployed *outside* that orchestrator,
    not a replacement for it (see

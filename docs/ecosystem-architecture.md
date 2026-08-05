@@ -7,7 +7,7 @@ each depends on the layer below it:
 | Repo | Role | Depends on |
 | :--- | :--- | :--- |
 | [`cei-labs-net`](.) *(this repo)* | Physical/virtual network: VLANs, DNS control, per-player bandwidth limits, QoS, player isolation | Hardware only |
-| [`cei-labs-engine`](https://github.com/stoptalkingishh/cei-labs-engine) | The platform that actually runs on VLAN 20: Docker Swarm stack (Traefik + CTFd + Challenge Instance Orchestrator + MariaDB/Redis + Juice Shop/Kali-noVNC/analyst containers) | `cei-labs-net`'s VLAN 20 host(s) and outbound internet (image pulls from GHCR) |
+| [`cei-labs-engine`](https://github.com/stoptalkingishh/cei-labs-engine) | The platform that actually runs on the CTF infrastructure network: Docker Swarm stack (Traefik + CTFd + Challenge Instance Orchestrator + MariaDB/Redis + Juice Shop/Kali-noVNC/analyst containers) | A reachable Docker Swarm on the live server network and outbound internet (image pulls from GHCR) |
 | [`CEI-Labs-Wargames`](https://github.com/stoptalkingishh/CEI-Labs-Wargames) | Challenge content pipeline: generates Bandit/Krypton/Natas-based challenge definitions and pushes them into a running CTFd via `ctfcli` | A reachable `cei-labs-engine` CTFd instance (`CTFD_URL` + `CTFD_TOKEN`) |
 
 ```
@@ -16,9 +16,9 @@ Player (VLAN 30/40)
    │  5/10 Mbit per-IP cap, QoS prioritizes DNS/ICMP/scoreboard
    ▼
 pfSense/OPNsense  ──(cei-labs-net)──
-   │  passes qHigh-tagged traffic through to VLAN 20
+   │  passes qHigh-tagged traffic through to the CTF infrastructure network
    ▼
-VLAN 20 — CTF Infrastructure host(s), Docker Swarm  ──(cei-labs-engine)──
+CTF Infrastructure host(s), Docker Swarm  ──(cei-labs-engine)──
    │  Traefik (ports 80/443, Swarm routing mesh)
    ├─▶ CTFd (+ instance-launcher plugin) ──▶ MariaDB, Redis
    └─▶ Challenge Instance Orchestrator ──▶ per-team private overlays
@@ -36,12 +36,14 @@ Pushes Bandit/Krypton/Natas challenge YAML into the running CTFd above
 ### 1. The "Scoreboard Engine host" this repo references is CTFd behind Traefik
 
 `docs/security-qos-policy.md` and `docs/verification-checklist.md` refer to
-`10.10.20.X` as the high-priority (`qHigh`) destination. In practice that's
-**Traefik**, fronting CTFd on **ports 80/443** — `cei-labs-engine` uses
-Swarm's routing mesh, so any Swarm node's IP on VLAN 20 answers on those
-ports regardless of which node actually runs the container. The QoS/limiter
-rules in this repo should match on `10.10.20.0/24:80,443`, not a single
-hardcoded host IP, if the CTF Infra host list grows beyond one machine.
+`10.10.20.X` as the high-priority (`qHigh`) destination in the older
+five-VLAN reference design. In practice that's **Traefik**, fronting CTFd on
+**ports 80/443** — `cei-labs-engine` uses Swarm's routing mesh, so any Swarm
+node's IP on the CTF infrastructure network answers on those ports regardless
+of which node actually runs the container. For the current live OPNsense
+buildout, that infrastructure network is `192.168.10.0/24`, not
+`10.10.20.0/24`; see
+[`fedora-swarm-test-plan.md`](fedora-swarm-test-plan.md).
 
 ### 2. CTFd is reached by hostname, not bare IP — this affects DNS interception
 
@@ -50,7 +52,7 @@ hardcoded host IP, if the CTF Infra host list grows beyond one machine.
 transparently intercepts **all** player DNS (see
 `docs/security-qos-policy.md` §1), that base domain must resolve correctly
 through the local resolver — either via a local DNS override/A-record
-pointing `ctfd.<base-domain>` at the VLAN 20 host(s), or by ensuring
+pointing `ctfd.<base-domain>` at the Swarm node(s), or by ensuring
 Traefik's TLS cert (`docker/traefik/certs/`, `dynamic/tls.yml.example` in
 `cei-labs-engine`) matches whatever hostname the local override uses.
 Without this, DNS interception (correctly) breaks access to the scoreboard
@@ -67,10 +69,12 @@ not wired into CTFd's instance-launcher), or as a hardening baseline to
 compare `cei-labs-engine`'s own container configs against. It is not a
 substitute for `cei-labs-engine`'s stack.
 
-This also means the VLAN 20 host(s) need `docker swarm init` (single host)
-or to be joined via `cei-labs-engine`'s `ansible/site.yml` (multi-host) —
-not just a bare Docker Engine install — before `cei-labs-engine` can be
-deployed. Update your build runbook accordingly.
+This also means the CTF infrastructure host(s) need `docker swarm init`
+(single host) or to be joined via `cei-labs-engine`'s `ansible/site.yml`
+(multi-host) — not just a bare Docker Engine install — before
+`cei-labs-engine` can be deployed. For this live build, place those nodes on
+the verified `192.168.10.0/24` LAN/server network unless the operator
+explicitly reintroduces a dedicated server VLAN.
 
 ### 4. Admin surface restriction is a shared responsibility
 

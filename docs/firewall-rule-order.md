@@ -23,7 +23,7 @@ per player VLAN interface (`vlan30_player`, `vlan40_player`).
 ## The order
 
 | # | Fragment / step | Source doc | Why it must be here |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Player-isolation block rule (own subnet → own subnet) | `security-qos-policy.md` §5 (pending — see note below) | Must be evaluated before literally anything else; nothing later should ever get a chance to pass this traffic first. |
 | 2 | IPv6 lockdown (system-level disable + interface config + explicit block) | `security-qos-policy.md` §0 (pending — see note below) | Prerequisite to the rest of this list being meaningful at all — none of rules 3+ have any IPv6 equivalent, so IPv6 must be fully dealt with independently, not interleaved. |
 | 3 | DoT/DoH/DoQ block (TCP **and** UDP 853) | `security-qos-policy.md` §2 | Must precede the DNS NAT redirect and the general allow rule — this is exactly the rule a wrong import order was found to silently defeat (see "Verified failure mode" below). |

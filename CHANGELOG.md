@@ -7,7 +7,17 @@ the full record.
 
 ## [Unreleased]
 
-Nothing yet.
+- Add an OPNsense end-state runbook for the live CEI-Labs box based on
+  authenticated router discovery: `em0` LAN/CTF infra, `ue0` WAN, and `ue1`
+  dedicated Player-WiFi with the `10.10.32.0/22` DHCP scope.
+- Record devices visible from the OPNsense box, including the operator
+  laptop, a Dell LAN device, and two NETGEAR devices on Player-WiFi.
+- Document that the prior five-VLAN design is stale for this deployment and
+  that leftover VLAN interfaces `vlan01`-`vlan05` still need cleanup if the
+  simplified two-network topology remains final.
+- Add a Fedora Swarm test plan for the live `192.168.10.0/24` server network,
+  including current server candidates, `cei-labs-engine` Ansible alignment,
+  required ports, validation gates, and blockers before joining hosts.
 
 ## Milestones before this file existed
 

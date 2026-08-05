@@ -51,7 +51,7 @@ The event hardware is now identified as SonicWall SonicPoint ACe
 gates are documented in
 [`access-point-sonicpoint-ace.md`](access-point-sonicpoint-ace.md). Hardware
 identification closes the vendor/model planning gap, and the expected
-inventory is now two units. It does not close the Wi-Fi verification gap:
+inventory is now three units. It does not close the Wi-Fi verification gap:
 firmware pinning, physical inventory confirmation, RF survey, same-AP and
 cross-AP isolation, full concurrent-client capacity, and degraded operation
 with one AP unavailable remain open until exercised on the physical units.
