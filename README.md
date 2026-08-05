@@ -24,6 +24,12 @@ absolute isolation between players, caps overall data consumption, and
 aggressively throttles non-essential traffic (streaming, game downloads, OS
 updates) so bandwidth stays available for the CTF itself.
 
+> **Live deployment override:** the current CEI-Labs laptop/router buildout is
+> not trying to reproduce every detail of this repository's generic reference
+> architecture. For the current OPNsense box, operator requirements and live
+> discovery in [`docs/opnsense-end-state.md`](docs/opnsense-end-state.md)
+> override the older five-VLAN reference topology.
+
 ---
 
 ## Repository Layout
@@ -78,8 +84,11 @@ visible devices, AP lane, and Headscale routing decision together.
    interface assignment wizard. For the current live box, follow
    [`docs/opnsense-end-state.md`](docs/opnsense-end-state.md) before the
    generic five-VLAN reference plan below.
-2. Follow [`docs/network-topology.md`](docs/network-topology.md) to lay out
-   VLANs 10/20/30/40/50 on the core switch and APs.
+2. For a new reference build, follow
+   [`docs/network-topology.md`](docs/network-topology.md) to lay out VLANs
+   10/20/30/40/50 on the core switch and APs. For the current live box, do not
+   do that unless the operator explicitly asks to abandon the simplified
+   topology.
 3. Apply the firewall/NAT/limiter rules in
    [`docs/security-qos-policy.md`](docs/security-qos-policy.md) (reference
    fragments live under `config/pfsense/` and `config/opnsense/`) —

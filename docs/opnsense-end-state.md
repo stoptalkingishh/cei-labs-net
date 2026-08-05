@@ -8,6 +8,35 @@ Source of truth for this page is live router discovery from
 `cei-router.ctf.internal` at `https://192.168.10.1`, plus the prior Claude
 hardware notes for the same box.
 
+## Operator requirements for this deployment
+
+This deployment is **not** required to match the generic repo reference design.
+When this document conflicts with `network-topology.md`,
+`security-qos-policy.md`, or other older reference material, this document wins
+for the current laptop/live-router buildout.
+
+Current requirements:
+
+1. Use the actual live OPNsense box state as the baseline; do not rebuild the
+   network just to match the repo's five-VLAN reference architecture.
+2. Keep the OPNsense box as the policy mediator between the operator/CTF LAN,
+   Player Wi-Fi, WAN, APs, and Headscale.
+3. Treat `em0` / `192.168.10.0/24` as the current LAN + CTF-infra network
+   unless the operator explicitly asks to split it back into a dedicated server
+   VLAN.
+4. Treat `ue1` / `10.10.32.0/22` as the current Player-WiFi network.
+5. Use the AP hardware that is actually present. The router currently sees two
+   NETGEAR devices on Player-WiFi; add/verify a third AP only if the operator
+   still wants three APs for capacity.
+6. Any AP must be bridge/AP-only: no DHCP server, no NAT, no routing. OPNsense
+   must remain the DHCP server, gateway, DNS/security control point, and
+   firewall boundary.
+7. Headscale routes and ACLs must be based on the live networks, not stale repo
+   assumptions. Today that means `192.168.10.0/24` is the likely server/operator
+   route, not `10.10.20.0/24`, unless a dedicated server VLAN is reintroduced.
+8. The old five-VLAN reference design remains useful as documentation, but it is
+   not the acceptance target for this deployment.
+
 ## Current live hardware state
 
 Verified from the OPNsense box with `hostname`, `uname -a`, `ifconfig -a`,
