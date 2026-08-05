@@ -7,7 +7,11 @@ the full record.
 
 ## [Unreleased]
 
-Nothing yet.
+- Add an OPNsense end-state runbook for the live CEI-Labs box: two physical
+  interfaces, VLAN 20 server network, three APs in bridge/AP mode, and
+  Headscale deployment gates.
+- Update AP inventory assumptions from two SonicPoint ACe units to three
+  planned APs plus one spare/expansion switch port.
 
 ## Milestones before this file existed
 

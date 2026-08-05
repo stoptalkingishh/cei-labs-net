@@ -24,16 +24,16 @@ from the switch.
 The ACe is Wi-Fi 5, not the generic Wi-Fi 6 minimum previously listed in the
 README. It can implement the required SSID/VLAN/security design, but it must
 not be assumed to support 80 active participants until the room layout,
-channel plan, and concurrent-client test pass. The expected inventory is two
-units, normally connected to switch ports 2 and 3; ports 4 and 5 remain spare
-for an added or replacement AP.
+channel plan, and concurrent-client test pass. The expected inventory is
+three units, normally connected to switch ports 2, 3, and 4; port 5 remains
+spare for an added or replacement AP.
 
-With all 80 participants on Wi-Fi, two units imply approximately 40
+With all 80 participants on Wi-Fi, three units imply approximately 27
 participants per AP before counting phones, VMs, or other secondary devices.
 That is a planning ratio, not an accepted capacity figure. Prefer one
 participant laptop per Wi-Fi admission, provide wired overflow seats, and do
 not advertise wireless capacity until a representative rehearsal passes.
-Two units also provide no proven full-capacity failover: losing one AP may
+Three units also provide no proven full-capacity failover: losing one AP may
 require moving participants to wired seats or pausing admission.
 
 Treat these as release gates:
@@ -92,8 +92,8 @@ ordinary Layer-2 traffic.
   world domain or select a country that does not match the venue.
 - Prefer 5 GHz for participant laptops. Use fixed, surveyed channels rather
   than allowing every AP to auto-select during the event.
-- With two APs, assign distinct surveyed 5 GHz channels and distinct 2.4 GHz
-  channels. Do not place both units on the same channel unless the survey
+- With three APs, assign distinct surveyed 5 GHz channels and distinct 2.4 GHz
+  channels. Do not place multiple APs on the same channel unless the survey
   demonstrates that this is unavoidable and the capacity test still passes.
 - Start with 20 or 40 MHz 5 GHz channels in a dense room; use 80 MHz only if
   the survey proves sufficient clean spectrum.
@@ -120,7 +120,7 @@ test:
 - CPU, memory, thermal, interface-error, and PoE stability observations;
 - same-AP and cross-AP peer-isolation results;
 - one AP power-loss/reboot recovery result.
-- results at the expected two-AP client load and the documented degraded
+- results at the expected three-AP client load and the documented degraded
   behavior with one AP unavailable.
 
 The wireless layer is accepted only when the full expected client count can

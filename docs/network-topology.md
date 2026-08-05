@@ -28,14 +28,16 @@ happens on the pfSense/OPNsense box itself.
 | :--- | :--- | :--- | :--- |
 | **WAN** | — (router WAN NIC) | N/A | Venue internet feed |
 | **LAN (uplink)** | Port 1 | 802.1Q Trunk | All VLANs (10, 20, 30, 40, 50) |
-| **SonicPoint ACe AP Links** | Ports 2–5 | Isolated 802.1Q Trunk | Management (10), Player Wi-Fi (30), Staff Wi-Fi (50) |
+| **SonicPoint ACe AP Links** | Ports 2–4 | Isolated 802.1Q Trunk | Management (10), Player Wi-Fi (30), Staff Wi-Fi (50) |
+| **Spare / expansion AP link** | Port 5 | Disabled by default; isolated 802.1Q trunk only when assigned | Management (10), Player Wi-Fi (30), Staff Wi-Fi (50) |
 | **Docker Infrastructure Host** | Port 10 | Access (untagged) | VLAN 20 |
 | **Wired Hardline Stations** | Ports 11–24 | Access (untagged) | VLAN 40 |
 
 Notes:
 
-- The expected event inventory is two SonicPoint ACe units on ports 2 and 3.
-  Ports 4 and 5 are reserved for a spare, replacement, or capacity expansion.
+- The expected event inventory is three SonicPoint ACe units on ports 2, 3,
+  and 4. Port 5 is reserved for a spare, replacement, or capacity expansion
+  and should remain disabled until an AP is physically assigned to it.
 
 - AP trunk ports carry only the VLANs each AP actually broadcasts SSIDs
   for — typically Player Wi-Fi (30) and Staff Wi-Fi (50), plus Management
@@ -75,7 +77,7 @@ Notes:
   SSID (VLAN 10) should use a separate, non-public passphrase not
   shared with players.
 - Ports 6–9 are unassigned by this layout (Ports 1–5 are the uplink/AP
-  trunks, 10 is the Docker host, 11–24 are wired stations). Leave them
+  trunks/spare AP capacity, 10 is the Docker host, 11–24 are wired stations). Leave them
   disabled/spare rather than defaulting them into an access VLAN, so an
   unauthorized device plugged into an open port doesn't land on a live
   network.
