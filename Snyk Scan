@@ -1,0 +1,24 @@
+# snyk code test
+
+Testing /home/greenpepper52/projects/ismael/cei-labs-net ...
+
+Open Issues
+
+ ✗ [MEDIUM] Insecure Xml Parser (Python < 3.11)
+   Finding ID: 8310710e-93ed-499e-b173-34a248bf33e0
+   Path: scripts/check_firewall_rule_order.py, line 109
+   Info: xml.etree.ElementTree.parse is vulnerable to XXE and DDOS in versions of python <= 3.10. If using python runtime 3.10 or older, consider upgrading python versions, or see https://docs.python.org/3.10/library/xml.html#xml-vulnerabilities for mitigations. Python versions 3.11 and onwards do not have this issue.
+
+
+
+╭──────────────────────────────────────────────────────────────────────────╮
+│ Test Summary                                                             │
+│                                                                          │
+│   Organization:                                                          │
+│   Test type:         Static code analysis                                │
+│   Project path:      /home/greenpepper52/projects/ismael/cei-labs-net    │
+│                                                                          │
+│   Total issues:   1                                                      │
+│   Ignored issues: 0 [ 0 HIGH  0 MEDIUM  0 LOW ]                          │
+│   Open issues:    1 [ 0 HIGH  1 MEDIUM  0 LOW ]                          │
+╰──────────────────────────────────────────────────────────────────────────╯
